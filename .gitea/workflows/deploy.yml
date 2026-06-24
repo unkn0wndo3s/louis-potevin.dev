@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Build documentation
+      - name: Build website
         run: npm run build
 
       - name: Deploy to Apache volume
