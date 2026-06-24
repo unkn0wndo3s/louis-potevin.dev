@@ -23,18 +23,6 @@ compatibility with Astro 7 in its `peerDependencies`. The **`.npmrc`**
 
 ---
 
-## Edit Before Going Live
-
-All modifiable content is centralized. Values to be confirmed are
-marked with `TODO` in the code :
-
-- **`src/data/site.ts`** - name, role, email, external links (Gitea, GitHub,
-npm, LinkedIn). In particular, verify :
-- **`src/data/projects.ts`** - la liste des projets (les « stations »).
-  Chaque entrée : résumé, contexte, contributions, stack, liens.
-
----
-
 ## Structure
 
 ```
