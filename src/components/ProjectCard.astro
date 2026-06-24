@@ -1,0 +1,104 @@
+---
+import { Card, Badge, Link } from '@unkn0wndo3s/nova-design-system';
+import { ArrowUpRight } from '@lucide/astro';
+import TechIcon from './TechIcon.astro';
+import { statusMeta, type Project } from '../data/projects';
+
+export interface Props {
+  project: Project;
+}
+const { project } = Astro.props;
+const status = statusMeta[project.status];
+const href = `/work/${project.slug}`;
+---
+
+<article class="proj">
+  <Card title={project.title} subtitle={project.tagline}>
+    <div class="proj__meta">
+      <span class="proj__code">{project.designation}</span>
+      <Badge type={status.tone} variant="soft">{status.label}</Badge>
+    </div>
+    <p class="proj__summary">{project.summary}</p>
+    <div class="proj__stack" aria-label="Stack technique">
+      {
+        project.stack.map((s) => (
+          <span class="proj__chip" title={s.label}>
+            <TechIcon name={s.icon} size={15} />
+            {s.label}
+          </span>
+        ))
+      }
+    </div>
+    <div slot="footer" class="proj__footer">
+      <Link url={href}>
+        Voir le projet
+        <ArrowUpRight size={15} />
+      </Link>
+    </div>
+  </Card>
+</article>
+
+<style lang="scss">
+  @use 'styles/type' as *;
+
+  .proj :global(.card) {
+    width: 100%;
+    height: 100%;
+    background: color-mix(in srgb, var(--nds-surface) 78%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-color: color-mix(in srgb, var(--nds-border) 90%, transparent);
+    transition:
+      transform 200ms ease,
+      border-color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .proj :global(.card:hover) {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--nds-primary) 45%, var(--nds-border));
+    box-shadow: var(--nds-shadow-lg);
+  }
+  .proj :global(.card__body) {
+    gap: var(--nds-spacing-sm);
+    height: 100%;
+  }
+
+  .proj__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+  }
+  .proj__code {
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--nds-accent);
+  }
+  .proj__summary {
+    @include text-base;
+    color: var(--nds-neutral);
+    margin: 0;
+  }
+  .proj__stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-2xs);
+    margin-top: var(--nds-spacing-2xs);
+  }
+  .proj__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-2xs);
+    padding: 3px var(--nds-spacing-xs);
+    border-radius: var(--nds-radius-full);
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    background: var(--nds-surface-2);
+    color: var(--nds-neutral);
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+  }
+  .proj__footer {
+    margin-top: auto;
+  }
+</style>

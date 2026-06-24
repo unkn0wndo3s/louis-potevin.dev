@@ -1,0 +1,52 @@
+---
+// Monochrome tech icon (inherits `color` via fill=currentColor).
+import {
+  Typescript,
+  Javascript,
+  Postgresql,
+  Docker,
+  Astro as AstroIcon,
+  Sass,
+  Gitea,
+  Linux,
+  Cloudflare,
+  Threedotjs,
+  Rust,
+  Python,
+  Npm,
+  Github,
+  Svelte,
+  Git,
+  Nodedotjs,
+} from 'simple-icons-astro';
+
+export interface Props {
+  name: string;
+  size?: number;
+}
+const { name, size = 18 } = Astro.props;
+
+const map: Record<string, any> = {
+  typescript: Typescript,
+  javascript: Javascript,
+  postgresql: Postgresql,
+  docker: Docker,
+  astro: AstroIcon,
+  sass: Sass,
+  gitea: Gitea,
+  linux: Linux,
+  cloudflare: Cloudflare,
+  threedotjs: Threedotjs,
+  rust: Rust,
+  python: Python,
+  npm: Npm,
+  github: Github,
+  svelte: Svelte,
+  git: Git,
+  nodedotjs: Nodedotjs,
+};
+
+const Icon = map[name];
+---
+
+{Icon && <Icon size={size} fill="currentColor" />}

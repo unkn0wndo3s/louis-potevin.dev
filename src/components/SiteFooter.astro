@@ -1,0 +1,134 @@
+---
+import { Gitea, Github, Npm } from 'simple-icons-astro';
+import { Mail } from '@lucide/astro';
+import BrandLinkedin from './BrandLinkedin.astro';
+import { site } from '../data/site';
+
+const year = new Date().getFullYear();
+const socials = [
+  { ...site.links.gitea, Comp: Gitea },
+  { ...site.links.github, Comp: Github },
+  { ...site.links.npm, Comp: Npm },
+];
+---
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand">
+      <span class="footer__mark" aria-hidden="true"></span>
+      <div>
+        <p class="footer__name">{site.name}</p>
+        <p class="footer__role">{site.role} · {site.location}</p>
+      </div>
+    </div>
+
+    <nav class="footer__links" aria-label="Liens externes">
+      {
+        socials.map((s) => (
+          <a class="footer__link" href={s.url} target="_blank" rel="noopener noreferrer" title={s.label}>
+            <s.Comp size={18} fill="currentColor" />
+            <span>{s.label}</span>
+          </a>
+        ))
+      }
+      <a class="footer__link" href={site.links.linkedin.url} target="_blank" rel="noopener noreferrer" title="LinkedIn">
+        <BrandLinkedin size={18} />
+        <span>LinkedIn</span>
+      </a>
+      <a class="footer__link" href={`mailto:${site.email}`} title="E-mail">
+        <Mail size={18} />
+        <span>E-mail</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="footer__base">
+    <span>© {year} {site.name}</span>
+    <span class="footer__sep" aria-hidden="true">·</span>
+    <span>Bâti avec Astro + Nova Design System</span>
+  </div>
+</footer>
+
+<style lang="scss">
+  @use 'styles/type' as *;
+
+  .footer {
+    position: relative;
+    z-index: 10;
+    border-top: var(--nds-border-width-thin) solid
+      color-mix(in srgb, var(--nds-border) 80%, transparent);
+    background: color-mix(in srgb, var(--nds-surface) 55%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-top: var(--nds-spacing-3xl);
+  }
+  .footer__inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: var(--nds-spacing-2xl) clamp(20px, 5vw, 56px) var(--nds-spacing-lg);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-lg);
+  }
+  .footer__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+  }
+  .footer__mark {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--nds-radius-md);
+    background: linear-gradient(135deg, var(--nds-primary), var(--nds-accent));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--nds-primary) 45%, transparent);
+  }
+  .footer__name {
+    @include text-xl;
+    margin: 0;
+  }
+  .footer__role {
+    @include text-sm;
+    color: var(--nds-neutral);
+    margin: 2px 0 0;
+  }
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-md);
+  }
+  .footer__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    color: var(--nds-neutral);
+    text-decoration: none;
+    @include text-label;
+    transition: color 140ms ease;
+    &:hover {
+      color: var(--nds-primary);
+    }
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--nds-ring);
+      border-radius: var(--nds-radius-sm);
+    }
+  }
+  .footer__base {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: var(--nds-spacing-md) clamp(20px, 5vw, 56px) var(--nds-spacing-2xl);
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    border-top: var(--nds-border-width-thin) solid
+      color-mix(in srgb, var(--nds-border) 50%, transparent);
+    @include text-sm;
+    color: var(--nds-neutral);
+    font-family: var(--nds-font-mono);
+  }
+  .footer__sep {
+    opacity: 0.5;
+  }
+</style>

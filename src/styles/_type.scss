@@ -1,0 +1,5 @@
+// Re-exports the official typography mixins from Nova DS.
+// The partial is resolved via a loadPath pointing to the package's 
+// style folder (its `exports` field prevents direct access to the subpath).
+// Usage in a component: @use "styles/type" as *; then @include text-3xl;
+@forward "tokens/typography";

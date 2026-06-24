@@ -1,0 +1,297 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import TechIcon from '../components/TechIcon.astro';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  TextField,
+  Select,
+  SelectOption,
+  Button,
+  Badge,
+} from '@unkn0wndo3s/nova-design-system';
+import { Send, Mail } from '@lucide/astro';
+import BrandLinkedin from '../components/BrandLinkedin.astro';
+import { site } from '../data/site';
+
+const title = 'Contact — Louis Potevin';
+const description =
+  'Contact Louis Potevin, full-stack web developer. Available for permanent positions (CDI) starting September 2026, anywhere in France or remote.';
+
+const directLinks = [
+  { kind: 'mail', label: site.email, url: `mailto:${site.email}` },
+  { kind: 'linkedin', label: 'LinkedIn', url: site.links.linkedin.url },
+  { kind: 'gitea', label: 'Gitea', url: site.links.gitea.url },
+  { kind: 'github', label: 'GitHub', url: site.links.github.url },
+];
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="head">
+    <Breadcrumb>
+      <BreadcrumbItem href="/">Home</BreadcrumbItem>
+      <BreadcrumbItem href="/contact" current>Contact</BreadcrumbItem>
+    </Breadcrumb>
+    <Eyebrow index="//" label="Connect" />
+    <h1 class="head__title">Get in touch</h1>
+    <p class="head__lede">
+      An opening, a project, or just a question? Email is the most direct 
+      channel, but the form works just as well.
+    </p>
+    <div class="head__avail">
+      <Badge type="success" variant="soft">Available</Badge>
+      <span>{site.availability} · {site.mobility}</span>
+    </div>
+  </section>
+
+  <div class="layout">
+    {/* ── Form (Nova components) ── */}
+    <section class="formWrap" aria-labelledby="form-title">
+      <h2 id="form-title" class="formWrap__title">Message</h2>
+
+      <div class="form" id="contact-form">
+        <TextField id="cf-name" label="Name" type="text" placeholder="Your name" />
+        <TextField
+          id="cf-email"
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+        />
+
+        <div class="form__field">
+          <label class="form__label" for="cf-subject">Subject</label>
+          <Select default="Job Opportunity (CDI)">
+            <SelectOption value="Job Opportunity (CDI)">
+              Job Opportunity (CDI)
+            </SelectOption>
+            <SelectOption value="Freelance / Contract">
+              Freelance / Contract
+            </SelectOption>
+            <SelectOption value="Project Inquiry">
+              Project Inquiry
+            </SelectOption>
+            <SelectOption value="Other">Other</SelectOption>
+          </Select>
+        </div>
+
+        <TextField
+          id="cf-message"
+          label="Your message"
+          type="textarea"
+          placeholder="A few lines about your needs…"
+          max={800}
+        />
+
+        <div class="form__actions">
+          <Button type="primary" size="lg" htmlType="button" id="cf-send">
+            <Send slot="icon-left" size={16} />
+            Send message
+          </Button>
+          <p class="form__hint" id="cf-hint">
+            Opens your mail client with a pre-filled draft.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Direct Links ── */}
+    <aside class="direct" aria-label="Direct channels">
+      <p class="direct__title">Direct Channels</p>
+      <ul class="direct__list">
+        {
+          directLinks.map((l) => (
+            <li>
+              <a
+                class="direct__item"
+                href={l.url}
+                {...(l.kind !== 'mail'
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
+                <span class="direct__icon">
+                  {l.kind === 'mail' && <Mail size={17} />}
+                  {l.kind === 'linkedin' && <BrandLinkedin size={17} />}
+                  {l.kind === 'gitea' && <TechIcon name="gitea" size={17} />}
+                  {l.kind === 'github' && <TechIcon name="github" size={17} />}
+                </span>
+                <span class="direct__label">{l.label}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="direct__loc">
+        <p class="direct__locTitle">Location</p>
+        <p class="direct__locValue">{site.location}</p>
+      </div>
+    </aside>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ email: site.email }}>
+  const send = document.getElementById('cf-send');
+  send?.addEventListener('click', () => {
+    const val = (id) => document.querySelector(`#${id} input, #${id} textarea`)?.value ?? '';
+    const name = val('cf-name');
+    const from = val('cf-email');
+    const subjectEl = document.querySelector('.select__label');
+    const subject = subjectEl?.textContent?.trim() || 'Inquiry';
+    const message = val('cf-message');
+
+    const body = `${message}\n\n— ${name}${from ? ` (${from})` : ''}`;
+    const href = `mailto:${email}?subject=${encodeURIComponent(
+      '[Portfolio] ' + subject,
+    )}&body=${encodeURIComponent(body)}`;
+    window.location.href = href;
+  });
+</script>
+
+<style lang="scss">
+  @use 'styles/type' as *;
+
+  .head {
+    padding: var(--nds-spacing-2xl) 0 var(--nds-spacing-xl);
+    max-width: 48rem;
+  }
+  .head__title {
+    @include text-4xl;
+    color: var(--nds-text);
+    margin: var(--nds-spacing-sm) 0 var(--nds-spacing-md);
+  }
+  .head__lede {
+    @include text-lg;
+    color: var(--nds-neutral);
+    margin: 0 0 var(--nds-spacing-md);
+  }
+  .head__avail {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    font-size: 0.8125rem;
+    color: var(--nds-neutral);
+    font-family: var(--nds-font-mono);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: var(--nds-spacing-2xl);
+    align-items: start;
+    padding-bottom: var(--nds-spacing-3xl);
+  }
+
+  .formWrap {
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-xl);
+    background: color-mix(in srgb, var(--nds-surface) 72%, transparent);
+    backdrop-filter: blur(10px);
+    padding: var(--nds-spacing-xl);
+  }
+  .formWrap__title {
+    @include text-xl;
+    color: var(--nds-text);
+    margin: 0 0 var(--nds-spacing-lg);
+  }
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-md);
+  }
+  .form__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-2xs);
+  }
+  .form__label {
+    @include text-label;
+    color: var(--nds-text);
+  }
+  .form__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-md);
+    flex-wrap: wrap;
+    margin-top: var(--nds-spacing-2xs);
+  }
+  .form__hint {
+    @include text-sm;
+    color: var(--nds-neutral);
+    margin: 0;
+  }
+
+  .direct {
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-xl);
+    background: color-mix(in srgb, var(--nds-surface) 60%, transparent);
+    backdrop-filter: blur(8px);
+    padding: var(--nds-spacing-lg);
+    position: sticky;
+    top: calc(64px + var(--nds-spacing-md));
+  }
+  .direct__title {
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--nds-neutral);
+    margin: 0 0 var(--nds-spacing-sm);
+  }
+  .direct__list {
+    list-style: none;
+    margin: 0 0 var(--nds-spacing-lg);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-2xs);
+  }
+  .direct__item {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+    padding: var(--nds-spacing-sm);
+    border-radius: var(--nds-radius-md);
+    border: var(--nds-border-width-thin) solid transparent;
+    color: var(--nds-neutral);
+    text-decoration: none;
+    transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+    &:hover {
+      color: var(--nds-text);
+      border-color: color-mix(in srgb, var(--nds-primary) 40%, var(--nds-border));
+      background: var(--nds-surface-2);
+    }
+  }
+  .direct__icon {
+    display: grid;
+    place-items: center;
+    color: var(--nds-primary);
+  }
+  .direct__label {
+    @include text-sm;
+    font-family: var(--nds-font-mono);
+  }
+  .direct__loc {
+    padding-top: var(--nds-spacing-md);
+    border-top: var(--nds-border-width-thin) solid var(--nds-border);
+  }
+  .direct__locTitle {
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--nds-neutral);
+    margin: 0 0 var(--nds-spacing-2xs);
+  }
+  .direct__locValue {
+    @include text-base;
+    color: var(--nds-text);
+    margin: 0;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; gap: var(--nds-spacing-xl); }
+    .direct { position: static; }
+  }
+</style>

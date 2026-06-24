@@ -1,0 +1,305 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Eyebrow from '../../components/Eyebrow.astro';
+import TechIcon from '../../components/TechIcon.astro';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  Badge,
+  Button,
+  Link,
+} from '@unkn0wndo3s/nova-design-system';
+import { ArrowUpRight, ArrowLeft } from '@lucide/astro';
+import { projects, statusMeta, type Project } from '../../data/projects';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: Project;
+}
+const { project } = Astro.props;
+const status = statusMeta[project.status];
+const title = `${project.title} — Louis Potevin`;
+---
+
+<BaseLayout title={title} description={project.tagline}>
+  <article class="detail">
+    <header class="detail__head">
+      <Breadcrumb>
+        <BreadcrumbItem href="/">Home</BreadcrumbItem>
+        <BreadcrumbItem href="/work">Projects</BreadcrumbItem>
+        <BreadcrumbItem href={`/work/${project.slug}`} current>
+          {project.designation}
+        </BreadcrumbItem>
+      </Breadcrumb>
+
+      <div class="detail__meta">
+        <span class="detail__code">{project.designation}</span>
+        <Badge type={status.tone} variant="soft">{status.label}</Badge>
+      </div>
+
+      <h1 class="detail__title">{project.title}</h1>
+      <p class="detail__tagline">{project.tagline}</p>
+
+      <dl class="detail__facts">
+        <div class="fact">
+          <dt>Role</dt>
+          <dd>{project.role}</dd>
+        </div>
+        <div class="fact">
+          <dt>Timeline</dt>
+          <dd>{project.period}</dd>
+        </div>
+      </dl>
+    </header>
+
+    <div class="detail__grid">
+      <div class="detail__main">
+        <p class="detail__summary">{project.summary}</p>
+
+        <section class="block" aria-labelledby="ctx">
+          <Eyebrow index="01" label="Context" />
+          <ul class="ticks">
+            {project.context.map((c) => <li>{c}</li>)}
+          </ul>
+        </section>
+
+        <section class="block" aria-labelledby="contrib">
+          <Eyebrow index="02" label="Contributions" />
+          <ul class="ticks">
+            {project.contributions.map((c) => <li>{c}</li>)}
+          </ul>
+        </section>
+      </div>
+
+      <aside class="detail__side">
+        <div class="panel">
+          <p class="panel__title">Stack</p>
+          <ul class="chips">
+            {
+              project.stack.map((s) => (
+                <li class="chip">
+                  <TechIcon name={s.icon} size={15} />
+                  {s.label}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        {
+          project.links.length > 0 && (
+            <div class="panel">
+              <p class="panel__title">Links</p>
+              <ul class="links">
+                {project.links.map((l) => (
+                  <li>
+                    <Link url={l.url} blank>
+                      {l.icon && <TechIcon name={l.icon} size={15} />}
+                      {l.label}
+                      <ArrowUpRight size={13} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        {
+          project.links.length === 0 && (
+            <div class="panel panel--muted">
+              <p class="panel__note">
+                Internal or private project — no public link available.
+              </p>
+            </div>
+          )
+        }
+      </aside>
+    </div>
+
+    <footer class="detail__foot">
+      <Button type="ghost" href="/work">
+        <ArrowLeft slot="icon-left" size={16} />
+        All projects
+      </Button>
+      <Button type="primary" href="/contact">
+        Discuss this project
+        <ArrowUpRight slot="icon-right" size={16} />
+      </Button>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style lang="scss">
+  @use 'styles/type' as *;
+
+  .detail {
+    padding: var(--nds-spacing-2xl) 0 var(--nds-spacing-3xl);
+    max-width: 64rem;
+  }
+  .detail__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+    margin: var(--nds-spacing-lg) 0 var(--nds-spacing-sm);
+  }
+  .detail__code {
+    font-family: var(--nds-font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--nds-accent);
+  }
+  .detail__title {
+    @include text-4xl;
+    color: var(--nds-text);
+    margin: 0;
+  }
+  .detail__tagline {
+    @include text-lg;
+    color: var(--nds-neutral);
+    margin: var(--nds-spacing-sm) 0 0;
+  }
+  .detail__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-2xl);
+    margin: var(--nds-spacing-lg) 0 0;
+    padding-top: var(--nds-spacing-md);
+    border-top: var(--nds-border-width-thin) solid var(--nds-border);
+  }
+  .fact {
+    margin: 0;
+    dt {
+      font-family: var(--nds-font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--nds-neutral);
+    }
+    dd {
+      @include text-base;
+      color: var(--nds-text);
+      margin: var(--nds-spacing-3xs) 0 0;
+    }
+  }
+
+  .detail__grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: var(--nds-spacing-2xl);
+    margin-top: var(--nds-spacing-2xl);
+    align-items: start;
+  }
+  .detail__summary {
+    @include text-lg;
+    color: var(--nds-text);
+    margin: 0 0 var(--nds-spacing-xl);
+  }
+  .block {
+    margin-bottom: var(--nds-spacing-xl);
+  }
+  .ticks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-sm);
+    li {
+      position: relative;
+      padding-left: var(--nds-spacing-md);
+      @include text-base;
+      color: var(--nds-neutral);
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.55em;
+        width: 6px;
+        height: 6px;
+        transform: rotate(45deg);
+        background: var(--nds-primary);
+      }
+    }
+  }
+
+  .detail__side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-md);
+    position: sticky;
+    top: calc(64px + var(--nds-spacing-md));
+  }
+  .panel {
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    background: color-mix(in srgb, var(--nds-surface) 70%, transparent);
+    backdrop-filter: blur(8px);
+    padding: var(--nds-spacing-lg);
+    &--muted { background: color-mix(in srgb, var(--nds-surface) 40%, transparent); }
+  }
+  .panel__title {
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--nds-neutral);
+    margin: 0 0 var(--nds-spacing-sm);
+  }
+  .panel__note {
+    @include text-sm;
+    color: var(--nds-neutral);
+    margin: 0;
+  }
+  .chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-2xs);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-2xs);
+    padding: 4px var(--nds-spacing-xs);
+    border-radius: var(--nds-radius-full);
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    background: var(--nds-surface-2);
+    color: var(--nds-neutral);
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+  }
+  .links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-2xs);
+  }
+
+  .detail__foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--nds-spacing-sm);
+    margin-top: var(--nds-spacing-2xl);
+    padding-top: var(--nds-spacing-lg);
+    border-top: var(--nds-border-width-thin) solid var(--nds-border);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 820px) {
+    .detail__grid { grid-template-columns: 1fr; gap: var(--nds-spacing-xl); }
+    .detail__side { position: static; }
+  }
+</style>

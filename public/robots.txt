@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://louis-potevin.dev/sitemap-index.xml

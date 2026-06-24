@@ -1,0 +1,44 @@
+@use 'styles/type' as *;
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--nds-text);
+  font-family: var(--nds-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background-color: var(--nds-background);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--nds-primary) 35%, transparent);
+  color: var(--nds-text);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--nds-border-strong) transparent;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+:focus-visible {
+  outline: none;
+}

@@ -1,0 +1,418 @@
+---
+import { Button, Badge } from '@unkn0wndo3s/nova-design-system';
+import { ArrowUpRight, Send } from '@lucide/astro';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import TechIcon from '../components/TechIcon.astro';
+
+import { site } from '../data/site';
+import { featuredProjects } from '../data/projects';
+
+const capabilities = [
+  {
+    label: 'Front-end',
+    body: 'Sleek and accessible interfaces built with Astro, TypeScript, and Sass — all the way to an in-house design system.',
+  },
+  {
+    label: 'Back-end',
+    body: 'Server-side services and APIs, data modeling, and business logic using Node and PostgreSQL.',
+  },
+  {
+    label: 'Tools & deployment',
+    body: 'Docker containerization, automated CI/CD, and end-to-end production deployment.',
+  },
+];
+
+const instruments = [
+  { icon: 'astro', label: 'Astro' },
+  { icon: 'typescript', label: 'TypeScript' },
+  { icon: 'javascript', label: 'JavaScript' },
+  { icon: 'sass', label: 'Sass' },
+  { icon: 'postgresql', label: 'PostgreSQL' },
+  { icon: 'docker', label: 'Docker' },
+  { icon: 'linux', label: 'Linux' },
+  { icon: 'cloudflare', label: 'Cloudflare' },
+  { icon: 'gitea', label: 'Gitea CI/CD' },
+  { icon: 'rust', label: 'Rust' },
+  { icon: 'python', label: 'Python' },
+  { icon: 'git', label: 'Git' },
+];
+---
+
+<BaseLayout>
+  {/* ─────────────────────────── HERO ─────────────────────────── */}
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__status">
+      <span class="hero__dot" aria-hidden="true"></span>
+      <span class="hero__statusText">Available · {site.availability}</span>
+    </div>
+
+    <h1 id="hero-title" class="hero__title">
+      Louis Potevin
+      <span class="hero__role">Full-stack developer</span>
+    </h1>
+
+    <p class="hero__lede">
+      I design and develop web applications from end to end — from front-end 
+      to back-end and production deployment. I am equally comfortable working 
+      on the user interface as I am with the services and infrastructure running them.
+    </p>
+
+    <div class="hero__cta">
+      <Button type="primary" size="lg" href="/work">
+        View projects
+        <ArrowUpRight slot="icon-right" size={18} />
+      </Button>
+      <Button type="ghost" size="lg" href="/contact">
+        <Send slot="icon-left" size={16} />
+        Contact me
+      </Button>
+    </div>
+
+    <div class="hero__avail">
+      <Badge type="success" variant="soft">Available</Badge>
+      <span class="hero__availText">{site.availability}</span>
+      <span class="hero__sep" aria-hidden="true">·</span>
+      <span class="hero__zones">{site.mobility}</span>
+    </div>
+  </section>
+
+  {/* ─────────────────────── PROFILE / CAPABILITIES ─────────────────────── */}
+  <section class="band" aria-labelledby="profile-title">
+    <Eyebrow index="01" label="Profile" />
+    <div class="band__split">
+      <h2 id="profile-title" class="band__lead">
+        A full-stack profile, comfortable across the entire stack.
+      </h2>
+      <div class="band__body">
+        <p>
+          I have hands-on experience running business applications in production while 
+          simultaneously developing my own side projects: a design system published 
+          on npm, a self-hosted infrastructure, and tools built with Rust and Python.
+        </p>
+        <p>
+          What drives me: mastering the entire cycle — the component you look at, 
+          the service that delivers it, and the CI that deploys it. This website is 
+          a prime example, built entirely on top of my own design system.
+        </p>
+      </div>
+    </div>
+
+    <ul class="caps" aria-label="Expertise">
+      {
+        capabilities.map((c) => (
+          <li class="cap">
+            <span class="cap__label">{c.label}</span>
+            <p class="cap__body">{c.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  {/* ─────────────────────────── FEATURED PROJECTS ─────────────────────────── */}
+  <section class="band" aria-labelledby="proj-title">
+    <Eyebrow index="02" label="Featured projects" />
+    <div class="band__head">
+      <h2 id="proj-title" class="band__lead">Projects</h2>
+      <a class="band__all" href="/work">
+        All projects <ArrowUpRight size={15} />
+      </a>
+    </div>
+    <div class="grid">
+      {featuredProjects.map((p) => <ProjectCard project={p} />)}
+    </div>
+  </section>
+
+  {/* ─────────────────────────── STACK ─────────────────────────── */}
+  <section class="band" aria-labelledby="stack-title">
+    <Eyebrow index="03" label="Tech stack" />
+    <h2 id="stack-title" class="band__lead band__lead--center">
+      My everyday tools.
+    </h2>
+    <ul class="instruments" aria-label="Core technologies">
+      {
+        instruments.map((t) => (
+          <li class="instruments__item">
+            <span class="instruments__icon">
+              <TechIcon name={t.icon} size={22} />
+            </span>
+            <span class="instruments__label">{t.label}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  {/* ─────────────────────────── CONTACT CTA ─────────────────────────── */}
+  <section class="closing" aria-labelledby="cta-title">
+    <p class="closing__eyebrow">Available — {site.availability}</p>
+    <h2 id="cta-title" class="closing__title">Let's talk!</h2>
+    <p class="closing__text">
+      I am looking for a full-stack permanent position (CDI) starting September 2026.
+      {' '}{site.mobility}.
+    </p>
+    <div class="closing__cta">
+      <Button type="primary" size="lg" href="/contact">
+        <Send slot="icon-left" size={16} />
+        Contact me
+      </Button>
+      <Button type="ghost" size="lg" href="/about">
+        Learn more
+        <ArrowUpRight slot="icon-right" size={16} />
+      </Button>
+    </div>
+  </section>
+</BaseLayout>
+
+<style lang="scss">
+  @use 'styles/type' as *;
+
+  /* ── HERO ── */
+  .hero {
+    min-height: clamp(520px, 80vh, 820px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--nds-spacing-md);
+    padding: var(--nds-spacing-3xl) 0 var(--nds-spacing-2xl);
+    max-width: 56rem;
+  }
+  .hero__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    align-self: flex-start;
+    padding: var(--nds-spacing-2xs) var(--nds-spacing-sm);
+    border: var(--nds-border-width-thin) solid var(--nds-border-strong);
+    border-radius: var(--nds-radius-full);
+    background: color-mix(in srgb, var(--nds-surface) 60%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .hero__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--nds-radius-full);
+    background: var(--nds-primary);
+    box-shadow: 0 0 10px var(--nds-primary);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .hero__statusText {
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    color: var(--nds-neutral);
+  }
+  .hero__title {
+    @include text-5xl;
+    margin: var(--nds-spacing-sm) 0 0;
+    color: var(--nds-text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-2xs);
+  }
+  .hero__role {
+    @include text-2xl;
+    color: var(--nds-primary);
+    font-family: var(--nds-font-mono);
+    font-weight: 500;
+  }
+  .hero__lede {
+    @include text-lg;
+    color: var(--nds-neutral);
+    max-width: 44rem;
+    margin: var(--nds-spacing-xs) 0 0;
+  }
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-sm);
+    margin-top: var(--nds-spacing-md);
+  }
+  .hero__avail {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-xs);
+    margin-top: var(--nds-spacing-sm);
+    font-size: 0.8125rem;
+    color: var(--nds-neutral);
+  }
+  .hero__availText { color: var(--nds-text); }
+  .hero__sep { color: var(--nds-border-strong); }
+  .hero__zones {
+    font-family: var(--nds-font-mono);
+    font-size: 0.75rem;
+  }
+
+  /* ── SECTION BANDS ── */
+  .band { padding: var(--nds-spacing-2xl) 0; }
+  .band__lead {
+    @include text-3xl;
+    color: var(--nds-text);
+    margin: 0;
+    max-width: 32rem;
+    &--center {
+      max-width: none;
+      text-align: center;
+      margin-bottom: var(--nds-spacing-2xl);
+    }
+  }
+  .band__split {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: var(--nds-spacing-2xl);
+    align-items: start;
+  }
+  .band__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nds-spacing-md);
+    p {
+      @include text-base;
+      color: var(--nds-neutral);
+      margin: 0;
+    }
+  }
+  .band__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--nds-spacing-md);
+    margin-bottom: var(--nds-spacing-xl);
+  }
+  .band__all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-2xs);
+    font-family: var(--nds-font-mono);
+    font-size: 0.8125rem;
+    color: var(--nds-primary);
+    text-decoration: none;
+    white-space: nowrap;
+    &:hover { color: var(--nds-accent); }
+  }
+
+  /* ── Capabilities ── */
+  .caps {
+    list-style: none;
+    margin: var(--nds-spacing-2xl) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--nds-spacing-lg);
+  }
+  .cap {
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    background: color-mix(in srgb, var(--nds-surface) 64%, transparent);
+    backdrop-filter: blur(6px);
+    padding: var(--nds-spacing-lg);
+  }
+  .cap__label {
+    font-family: var(--nds-font-mono);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--nds-primary);
+    letter-spacing: 0.02em;
+  }
+  .cap__body {
+    @include text-sm;
+    color: var(--nds-neutral);
+    margin: var(--nds-spacing-xs) 0 0;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--nds-spacing-lg);
+  }
+
+  /* ── INSTRUMENTS ── */
+  .instruments {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--nds-spacing-sm);
+  }
+  .instruments__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    padding: var(--nds-spacing-lg) var(--nds-spacing-sm);
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    background: color-mix(in srgb, var(--nds-surface) 64%, transparent);
+    backdrop-filter: blur(6px);
+    transition: border-color 180ms ease, transform 180ms ease, color 180ms ease;
+    color: var(--nds-neutral);
+    &:hover {
+      border-color: color-mix(in srgb, var(--nds-primary) 50%, var(--nds-border));
+      transform: translateY(-2px);
+      color: var(--nds-primary);
+    }
+  }
+  .instruments__icon { display: grid; place-items: center; color: inherit; }
+  .instruments__label {
+    font-family: var(--nds-font-mono);
+    font-size: 0.6875rem;
+    color: var(--nds-neutral);
+  }
+
+  /* ── CLOSING ── */
+  .closing {
+    text-align: center;
+    padding: var(--nds-spacing-3xl) 0;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  .closing__eyebrow {
+    font-family: var(--nds-font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: var(--nds-accent);
+    margin: 0 0 var(--nds-spacing-md);
+  }
+  .closing__title {
+    @include text-4xl;
+    color: var(--nds-text);
+    margin: 0 0 var(--nds-spacing-md);
+  }
+  .closing__text {
+    @include text-lg;
+    color: var(--nds-neutral);
+    margin: 0 0 var(--nds-spacing-xl);
+  }
+  .closing__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-sm);
+    justify-content: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__dot { animation: none; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .band__split { grid-template-columns: 1fr; gap: var(--nds-spacing-lg); }
+    .caps { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .instruments { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; }
+    .instruments { grid-template-columns: repeat(3, 1fr); }
+    .hero__cta :global(.button) { width: 100%; }
+  }
+</style>

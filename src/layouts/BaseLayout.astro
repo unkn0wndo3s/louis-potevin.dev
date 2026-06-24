@@ -1,0 +1,169 @@
+---
+import '@unkn0wndo3s/nova-design-system/styles';
+import '../styles/global.scss';
+
+import SpaceBackground from '../components/SpaceBackground.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { site } from '../data/site';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  /** Page-specific keywords (appended to the global keywords list). */
+  keywords?: string[];
+}
+
+const {
+  title = 'Louis Potevin — Full-stack Developer (front, back, web)',
+  description = "Louis Potevin, full-stack web developer: front-end, back-end, TypeScript, Astro, Node. Available for a permanent contract (CDI) starting September 2026, anywhere in France or remote.",
+  keywords = [],
+} = Astro.props;
+
+const baseKeywords = [
+  // French Keywords
+  'Louis Potevin',
+  'développeur web',
+  'developpeur web',
+  'dev web',
+  'développeur full-stack',
+  'developpeur full stack',
+  'dev front',
+  'développeur front-end',
+  'dev back',
+  'développeur back-end',
+  'développeur TypeScript',
+  'développeur Astro',
+  'développeur JavaScript',
+  'développeur Node.js',
+  'développeur freelance France',
+  'portfolio développeur',
+  'web developer',
+  'full-stack developer',
+  'full stack developer',
+  'front-end developer',
+  'front end dev',
+  'back-end developer',
+  'back end dev',
+  'TypeScript developer',
+  'Astro developer',
+  'JavaScript developer',
+  'Node.js developer',
+  'software engineer France',
+  'developer portfolio',
+];
+const allKeywords = [...baseKeywords, ...keywords].join(', ');
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://louis-potevin.dev').href;
+const ogImage = new URL('/og.png', Astro.site ?? 'https://louis-potevin.dev').href;
+
+// Structured data: Person profile (helps Google link your name ↔ profession ↔ social links).
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: 'Full-stack Developer / Développeur full-stack',
+  description,
+  url: canonical,
+  email: `mailto:${site.email}`,
+  address: { '@type': 'PostalAddress', addressCountry: 'FR', addressLocality: 'Limoges' },
+  knowsAbout: [
+    'Web development',
+    'Développement web',
+    'Front-end',
+    'Back-end',
+    'TypeScript',
+    'JavaScript',
+    'Astro',
+    'Node.js',
+    'Sass',
+    'Docker',
+    'CI/CD',
+  ],
+  sameAs: [
+    site.links.github.url,
+    site.links.gitea.url,
+    site.links.npm.url,
+    site.links.linkedin.url,
+  ],
+};
+
+const siteLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: `${site.name} — Portfolio`,
+  url: Astro.site?.href ?? 'https://louis-potevin.dev',
+  inLanguage: ['en-US', 'fr-FR'],
+};
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={allKeywords} />
+    <meta name="author" content={site.name} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={`${site.name} — Portfolio`} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <meta name="theme-color" content="#040B0B" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(siteLd)} />
+  </head>
+  <body>
+    <SpaceBackground />
+    <a class="skip" href="#content">Skip to content</a>
+    <SiteNav />
+    <main id="content" class="shell">
+      <slot />
+    </main>
+    <SiteFooter />
+
+    <style lang="scss">
+      .shell {
+        position: relative;
+        z-index: 10;
+        max-width: 1120px;
+        margin-inline: auto;
+        padding-inline: clamp(20px, 5vw, 56px);
+      }
+      .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 100;
+        padding: var(--nds-spacing-xs) var(--nds-spacing-md);
+        background: var(--nds-primary);
+        color: var(--nds-on-primary);
+        border-radius: var(--nds-radius-md);
+        &:focus {
+          left: var(--nds-spacing-md);
+          top: var(--nds-spacing-md);
+        }
+      }
+    </style>
+  </body>
+</html>

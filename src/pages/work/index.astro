@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Eyebrow from '../../components/Eyebrow.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { Breadcrumb, BreadcrumbItem } from '@unkn0wndo3s/nova-design-system';
+import { projects } from '../../data/projects';
+
+const title = 'Projects — Louis Potevin, full-stack web developer / développeur full-stack';
+const description =
+  'Projects by Louis Potevin: Astro design system, self-hosted infrastructure, systems tools in Rust, and LLM explorations. Full-stack web developer.';
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="head">
+    <Breadcrumb>
+      <BreadcrumbItem href="/">Home</BreadcrumbItem>
+      <BreadcrumbItem href="/work" current>Projects</BreadcrumbItem>
+    </Breadcrumb>
+
+    <Eyebrow index="//" label="All projects" />
+    <h1 class="head__title">Projects</h1>
+    <p class="head__lede">
+      A showcase of everything I build — from business software running in production to
+      the infrastructure supporting it, alongside my personal tools.
+    </p>
+  </section>
+
+  <section class="grid" aria-label="Projects list">
+    {projects.map((p) => <ProjectCard project={p} />)}
+  </section>
+</BaseLayout>
+
+<style lang="scss">
+  @use 'styles/type' as *;
+
+  .head {
+    padding: var(--nds-spacing-2xl) 0 var(--nds-spacing-xl);
+    max-width: 48rem;
+  }
+  .head__title {
+    @include text-4xl;
+    color: var(--nds-text);
+    margin: var(--nds-spacing-sm) 0 var(--nds-spacing-md);
+  }
+  .head__lede {
+    @include text-lg;
+    color: var(--nds-neutral);
+    margin: 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--nds-spacing-lg);
+    padding-bottom: var(--nds-spacing-3xl);
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>

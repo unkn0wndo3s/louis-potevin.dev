@@ -1,0 +1,57 @@
+---
+import { Navbar, Button } from '@unkn0wndo3s/nova-design-system';
+import { Send } from '@lucide/astro';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const links = [
+  { href: '/', label: 'Accueil' },
+  { href: '/work', label: 'Projets' },
+  { href: '/about', label: 'À propos' },
+  { href: '/contact', label: 'Contact' },
+];
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
+---
+
+<div class="site-nav">
+  <Navbar brand="L · POTEVIN">
+    {
+      links.map((l) => (
+        <a
+          class={`navbar__link ${isActive(l.href) ? 'navbar__link--active' : ''}`}
+          href={l.href}
+          aria-current={isActive(l.href) ? 'page' : undefined}
+        >
+          {l.label}
+        </a>
+      ))
+    }
+    <Button slot="right" type="primary" size="sm" href="/contact">
+      <Send slot="icon-left" size={15} />
+      Établir le contact
+    </Button>
+  </Navbar>
+</div>
+
+<style lang="scss">
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+
+    // Nova Navbar rendered translucent to let the starfield show through.
+    :global(.navbar) {
+      background: color-mix(in srgb, var(--nds-background) 72%, transparent);
+      backdrop-filter: blur(14px) saturate(1.1);
+      -webkit-backdrop-filter: blur(14px) saturate(1.1);
+      border-bottom: var(--nds-border-width-thin) solid
+        color-mix(in srgb, var(--nds-border) 80%, transparent);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .site-nav :global(.navbar__links) {
+      display: none;
+    }
+  }
+</style>
