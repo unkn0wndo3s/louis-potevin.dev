@@ -1,7 +1,7 @@
 // Projects - real content. Edit freely.
 // `icon` matches a simple-icons-astro component (using PascalCase elsewhere).
 
-export type ProjectStatus = 'live' | 'maintenu' | 'archive' | 'r&d';
+export type ProjectStatus = 'live' | 'maintained' | 'archived' | 'r&d';
 
 export interface ProjectLink {
   label: string;
@@ -33,18 +33,21 @@ export const projects: Project[] = [
     tagline: 'Astro component library - tokens, accessibility, npm distribution.',
     period: '2026 - ongoing',
     role: 'Author · maintainer',
-    status: 'maintenu',
+    status: 'maintained',
     featured: true,
     summary:
-      'The design system that powers this website and will power my other projects. 29 Astro components across six families, a complete set of tokens (color, typography, spacing, radius), and a light/dark theme managed via CSS variables.',
+      'A library of 29 Astro components across six families, with a complete token system (color, typography, spacing, radius) and a light/dark theme driven by CSS variables. Currently at version 1.2.1, it powers this portfolio and will be progressively adapted to my other projects, including outside the Astro ecosystem (a GPUI/Rust binding is planned for File Organizer).',
     context: [
       'Designed for clean, technical interfaces: mono fonts for headings, sans-serif for body text.',
-      'Distributed under the npm scope @unkn0wndo3s, automatically published via a CI pipeline.',
+      'Distributed under the npm scope @unkn0wndo3s, published automatically via a CI pipeline.',
       'License: free to use, resale of the design system as a standalone product is prohibited.',
+      'Adoption is currently internal: the download spikes seen on npm in the days after each release are mostly bot/CI traffic rather than organic external adoption so far.',
     ],
     contributions: [
       'Architecture of tokens and components (Custom Elements, typed events, slots).',
-      'Gitea Actions CI/CD pipeline for automated npm publishing and documentation deployment.',
+      'Gitea Actions CI/CD pipeline for automated npm publishing: checkout, version check, install, publish — about 19s end to end.',
+      'Current documentation: component list and status at nds.louis-potevin.dev, with technical usage docs coming next.',
+      '6-12 month roadmap: automatic component export on every release, new components, complete documentation. Longer term (12+ months): ports to Vue.js, React, Svelte, Java, and a Rust package, with docs kept up to date for each target.',
     ],
     stack: [
       { icon: 'astro', label: 'Astro' },
@@ -62,27 +65,28 @@ export const projects: Project[] = [
     slug: 'nova-infra',
     designation: '02',
     title: 'Self-hosted Infrastructure & Deployment',
-    tagline: 'Containerized services, CI/CD, and secured ingress on a fully controlled infrastructure.',
+    tagline: 'Containerized services, CI/CD, and secured ingress on a dedicated server.',
     period: '2025 - ongoing',
     role: 'Design & operations',
     status: 'live',
     featured: true,
     summary:
-      'A comprehensive self-hosted infrastructure: Git hosting, secret management, and application services, all containerized with Docker and continuously deployed.',
+      'Self-hosted infrastructure running on a dedicated OVH server. Four application containers currently active alongside the hosted sites, with Git, secret management, and exposure through an Apache reverse proxy.',
     context: [
-      'Fully containerized with Docker, orchestrated, and reproducible.',
-      'Certificates and DNS managed through Cloudflare.',
-      'Services cleanly exposed using a reverse proxy.',
+      'Containerized with Docker on a dedicated OVH server.',
+      'Services exposed through an Apache reverse proxy, suited to a dedicated-machine setup.',
+      'Two domains managed: novaprojects.dev (4+ subdomains for self-hosted services) and louis-potevin.dev (1 subdomain).',
     ],
     contributions: [
-      'Setup of a self-hosted Gitea instance with a Postgres backend and action runners.',
-      'End-to-end automated CI/CD pipelines (build, test, publish).',
-      'Day-to-day operations: Docker networks, volume mounts, DNS, and diagnostics.',
+      'Setup and administration of a self-hosted Gitea instance with a Postgres backend and one Actions runner.',
+      'Lightweight CI/CD pipelines (build, test, publish), running in about 10-20 seconds.',
+      'Day-to-day operations: Docker networks, volumes, DNS, diagnostics.',
+      'Identified improvement areas: no monitoring or backup strategy in place yet — next iteration of the infrastructure.',
     ],
     stack: [
       { icon: 'docker', label: 'Docker' },
       { icon: 'linux', label: 'Linux' },
-      { icon: 'cloudflare', label: 'Cloudflare Tunnel' },
+      { icon: 'apache', label: 'Apache (reverse proxy)' },
       { icon: 'gitea', label: 'Gitea' },
     ],
     links: [{ label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn', icon: 'gitea' }],
@@ -97,16 +101,17 @@ export const projects: Project[] = [
     status: 'live',
     featured: true,
     summary:
-      'A static multi-page portfolio website. The content is entirely built using Nova components, featuring a subtle, discrete Three.js space background.',
+      'A static multi-page portfolio (5 pages), entirely composed with Nova components, with a subtle Three.js space background. Built in one day, recently shipped.',
     context: [
-      'Three.js space background: starfield, nebula, and an ambient asteroid.',
+      'Three.js background: starfield, nebula, and an ambient asteroid.',
       'UI entirely composed using the in-house design system.',
-      'Astro multi-page setup with Static Site Generation (SSG), optimized for SEO.',
+      'Astro with Static Site Generation (SSG), chosen for its simplicity over Svelte (already comfortable with Vue.js, and not fond of the Svelte DX).',
     ],
     contributions: [
-      'Full integration using Nova tokens and components.',
-      'Adherence to prefers-reduced-motion and graceful degradation when WebGL is unavailable.',
-      'Meticulous SEO: metadata, structured data, and sitemap generation.',
+      'Full integration of Nova tokens and components.',
+      'Respects prefers-reduced-motion and degrades gracefully when WebGL is unavailable.',
+      'Current Lighthouse scores: Accessibility 100, Best Practices 100, SEO 92, Performance 55 (optimization in progress).',
+      'Roadmap: multilingual version, dark/light mode toggle. No audience data yet (site just went live), no CV download for now.',
     ],
     stack: [
       { icon: 'astro', label: 'Astro' },
@@ -125,14 +130,18 @@ export const projects: Project[] = [
     status: 'r&d',
     featured: false,
     summary:
-      'A file organizer tool that currently runs in Java on Windows. It is being converted to Rust to achieve cross-platform Linux compatibility and optimize file search performance.',
+      'An automatic sorting tool that moves downloaded files and folders into dedicated directories (executables, archives, etc.) at the root of the downloads folder, alongside the existing images/videos/documents directories. The Java version, functional on Windows, is being ported to Rust for Linux compatibility, cleaner code, and a simpler build.',
     context: [
-      'Current version: operational in Java, targeting Windows.',
-      'Gradual porting to Rust for performance gains and low-level control.',
+      'Current Java version: many dependencies, slower build, loosely structured code, requires Java installed (or shipping the executable).',
+      'Rust version: better organized code, simpler compilation, expected scan performance on par with or better than Java.',
+      'GUI built with GPUI (used for the interface only), with a side console for monitoring/diagnosing errors.',
     ],
     contributions: [
-      'Rewriting sorting logic from Java to Rust.',
-      'Setting objectives for Linux compatibility and file search optimization.',
+      'Sorting logic: moves files/folders into type-specific directories (executables, archives, etc.), with subfolders grouped into a "folders" directory.',
+      'Sorting safety under review: the Java version copied then deleted the source after the copy completed (to prevent data loss); the approach will be revisited in Rust.',
+      'Key goal of the port: deep recursive scanning — the Java version only knows about files/folders it has moved or seen at the surface level, not nested contents.',
+      'Current state: UI nearly complete, sorting logic still to be rewritten; tested on small volumes so far, targeting 10k+ files at once since it runs on startup.',
+      'Open source on GitHub; will move to Gitea once the Rust port is finished.',
     ],
     stack: [
       { icon: 'rust', label: 'Rust' },
@@ -144,20 +153,21 @@ export const projects: Project[] = [
     slug: 'llm-tooling',
     designation: '05',
     title: 'LLM Training & Inference',
-    tagline: 'Small language model trained on a Reddit conversation dataset.',
+    tagline: 'Language models trained on a Reddit conversation dataset, aiming for a voice-capable, autonomous assistant.',
     period: '2025 - ongoing',
     role: 'Development',
     status: 'r&d',
     featured: false,
     summary:
-      'A language model training and inference project running on a dedicated machine. The model is trained on a custom dataset of Reddit conversations. Development is ongoing.',
+      'A language model training and inference project on a dedicated machine, scaling up progressively: 100M, then 500M, 1B, and potentially 3B parameters. The end goal is a voice-capable conversational AI that learns from its conversations and gains a degree of autonomy.',
     context: [
-      'Execution on a dedicated workstation optimized for training and inference.',
-      'Dataset: conversation threads sourced from Reddit.',
+      'Dedicated machine: Ryzen 9 9900X, RTX 5070 Ti, 64GB DDR5 6400MHz CL32.',
+      'Dataset: Reddit conversations, starting at roughly 100GB with a target of scaling up to 1-2TB.',
+      'Custom in-house inference script (currently being designed).',
     ],
     contributions: [
-      'Assembling and preprocessing the conversation dataset.',
-      'Setting up the training and inference loop, currently iterating on results.',
+      'Assembling and structuring the Reddit conversation dataset.',
+      'Setting up the training pipeline, currently in the preparation phase (training has not started yet, so no quality metrics are available at this stage).',
     ],
     stack: [
       { icon: 'python', label: 'Python' },
@@ -171,7 +181,7 @@ export const featuredProjects = projects.filter((p) => p.featured);
 
 export const statusMeta: Record<ProjectStatus, { label: string; tone: 'success' | 'primary' | 'neutral' | 'warning' }> = {
   live: { label: 'Live', tone: 'success' },
-  maintenu: { label: 'Maintained', tone: 'primary' },
+  maintained: { label: 'Maintained', tone: 'primary' },
   'r&d': { label: 'In Progress', tone: 'warning' },
-  archive: { label: 'Archived', tone: 'neutral' },
+  archived: { label: 'Archived', tone: 'neutral' },
 };
