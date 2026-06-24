@@ -5,7 +5,7 @@ export const site = {
   domain: "louis-potevin.dev",
   location: "Limoges · Nouvelle-Aquitaine",
   // Job Search
-  availability: "Permanent contract (CDI) — September 2026",
+  availability: "Permanent contract (CDI) - September 2026",
   mobility: "Anywhere in France, on-site or remote",
   // Contact
   email: "contact@louis-potevin.dev",

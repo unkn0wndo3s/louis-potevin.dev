@@ -13,7 +13,7 @@ import { featuredProjects } from '../data/projects';
 const capabilities = [
   {
     label: 'Front-end',
-    body: 'Sleek and accessible interfaces built with Astro, TypeScript, and Sass — all the way to an in-house design system.',
+    body: 'Sleek and accessible interfaces built with Astro, TypeScript, and Sass - all the way to an in-house design system.',
   },
   {
     label: 'Back-end',
@@ -42,7 +42,7 @@ const instruments = [
 ---
 
 <BaseLayout>
-  {/* ─────────────────────────── HERO ─────────────────────────── */}
+  {/*  HERO  */}
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero__status">
       <span class="hero__dot" aria-hidden="true"></span>
@@ -55,7 +55,7 @@ const instruments = [
     </h1>
 
     <p class="hero__lede">
-      I design and develop web applications from end to end — from front-end 
+      I design and develop web applications from end to end - from front-end 
       to back-end and production deployment. I am equally comfortable working 
       on the user interface as I am with the services and infrastructure running them.
     </p>
@@ -79,7 +79,7 @@ const instruments = [
     </div>
   </section>
 
-  {/* ─────────────────────── PROFILE / CAPABILITIES ─────────────────────── */}
+  {/*  PROFILE / CAPABILITIES  */}
   <section class="band" aria-labelledby="profile-title">
     <Eyebrow index="01" label="Profile" />
     <div class="band__split">
@@ -93,7 +93,7 @@ const instruments = [
           on npm, a self-hosted infrastructure, and tools built with Rust and Python.
         </p>
         <p>
-          What drives me: mastering the entire cycle — the component you look at, 
+          What drives me: mastering the entire cycle - the component you look at, 
           the service that delivers it, and the CI that deploys it. This website is 
           a prime example, built entirely on top of my own design system.
         </p>
@@ -112,7 +112,7 @@ const instruments = [
     </ul>
   </section>
 
-  {/* ─────────────────────────── FEATURED PROJECTS ─────────────────────────── */}
+  {/*  FEATURED PROJECTS  */}
   <section class="band" aria-labelledby="proj-title">
     <Eyebrow index="02" label="Featured projects" />
     <div class="band__head">
@@ -126,7 +126,7 @@ const instruments = [
     </div>
   </section>
 
-  {/* ─────────────────────────── STACK ─────────────────────────── */}
+  {/*  STACK  */}
   <section class="band" aria-labelledby="stack-title">
     <Eyebrow index="03" label="Tech stack" />
     <h2 id="stack-title" class="band__lead band__lead--center">
@@ -146,9 +146,9 @@ const instruments = [
     </ul>
   </section>
 
-  {/* ─────────────────────────── CONTACT CTA ─────────────────────────── */}
+  {/*  CONTACT CTA  */}
   <section class="closing" aria-labelledby="cta-title">
-    <p class="closing__eyebrow">Available — {site.availability}</p>
+    <p class="closing__eyebrow">Available - {site.availability}</p>
     <h2 id="cta-title" class="closing__title">Let's talk!</h2>
     <p class="closing__text">
       I am looking for a full-stack permanent position (CDI) starting September 2026.
@@ -170,7 +170,7 @@ const instruments = [
 <style lang="scss">
   @use 'styles/type' as *;
 
-  /* ── HERO ── */
+  /*  HERO  */
   .hero {
     min-height: clamp(520px, 80vh, 820px);
     display: flex;
@@ -247,7 +247,7 @@ const instruments = [
     font-size: 0.75rem;
   }
 
-  /* ── SECTION BANDS ── */
+  /*  SECTION BANDS  */
   .band { padding: var(--nds-spacing-2xl) 0; }
   .band__lead {
     @include text-3xl;
@@ -295,7 +295,7 @@ const instruments = [
     &:hover { color: var(--nds-accent); }
   }
 
-  /* ── Capabilities ── */
+  /*  Capabilities  */
   .caps {
     list-style: none;
     margin: var(--nds-spacing-2xl) 0 0;
@@ -330,7 +330,7 @@ const instruments = [
     gap: var(--nds-spacing-lg);
   }
 
-  /* ── INSTRUMENTS ── */
+  /*  INSTRUMENTS  */
   .instruments {
     list-style: none;
     margin: 0;
@@ -364,7 +364,7 @@ const instruments = [
     color: var(--nds-neutral);
   }
 
-  /* ── CLOSING ── */
+  /*  CLOSING  */
   .closing {
     text-align: center;
     padding: var(--nds-spacing-3xl) 0;
@@ -403,7 +403,7 @@ const instruments = [
     .hero__dot { animation: none; }
   }
 
-  /* ── RESPONSIVE ── */
+  /*  RESPONSIVE  */
   @media (max-width: 900px) {
     .band__split { grid-template-columns: 1fr; gap: var(--nds-spacing-lg); }
     .caps { grid-template-columns: 1fr; }

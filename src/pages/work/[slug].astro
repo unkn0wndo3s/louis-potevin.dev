@@ -24,7 +24,7 @@ interface Props {
 }
 const { project } = Astro.props;
 const status = statusMeta[project.status];
-const title = `${project.title} — Louis Potevin`;
+const title = `${project.title} - Louis Potevin`;
 ---
 
 <BaseLayout title={title} description={project.tagline}>
@@ -115,7 +115,7 @@ const title = `${project.title} — Louis Potevin`;
           project.links.length === 0 && (
             <div class="panel panel--muted">
               <p class="panel__note">
-                Internal or private project — no public link available.
+                Internal or private project - no public link available.
               </p>
             </div>
           )
@@ -297,7 +297,7 @@ const title = `${project.title} — Louis Potevin`;
     border-top: var(--nds-border-width-thin) solid var(--nds-border);
   }
 
-  /* ── RESPONSIVE ── */
+  /*  RESPONSIVE  */
   @media (max-width: 820px) {
     .detail__grid { grid-template-columns: 1fr; gap: var(--nds-spacing-xl); }
     .detail__side { position: static; }

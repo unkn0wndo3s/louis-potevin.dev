@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "private": true,
-  "description": "Portfolio Louis Potevin — louis-potevin.dev. Astro + Nova Design System.",
+  "description": "Portfolio Louis Potevin - louis-potevin.dev. Astro + Nova Design System.",
   "engines": {
     "node": ">=22.12.0"
   },

@@ -1,7 +1,5 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Projects — real content. Edit freely.
+// Projects - real content. Edit freely.
 // `icon` matches a simple-icons-astro component (using PascalCase elsewhere).
-// ─────────────────────────────────────────────────────────────────────────────
 
 export type ProjectStatus = 'live' | 'maintenu' | 'archive' | 'r&d';
 
@@ -32,8 +30,8 @@ export const projects: Project[] = [
     slug: 'nova-design-system',
     designation: '01',
     title: 'Nova Design System',
-    tagline: 'Astro component library — tokens, accessibility, npm distribution.',
-    period: '2026 — ongoing',
+    tagline: 'Astro component library - tokens, accessibility, npm distribution.',
+    period: '2026 - ongoing',
     role: 'Author · maintainer',
     status: 'maintenu',
     featured: true,
@@ -65,7 +63,7 @@ export const projects: Project[] = [
     designation: '02',
     title: 'Self-hosted Infrastructure & Deployment',
     tagline: 'Containerized services, CI/CD, and secured ingress on a fully controlled infrastructure.',
-    period: '2025 — ongoing',
+    period: '2025 - ongoing',
     role: 'Design & operations',
     status: 'live',
     featured: true,
@@ -120,9 +118,9 @@ export const projects: Project[] = [
   {
     slug: 'rust-file-organizer',
     designation: '04',
-    title: 'File Organizer — Java to Rust',
+    title: 'File Organizer - Java to Rust',
     tagline: 'File sorting tool, currently being ported from Java to Rust.',
-    period: '2025 — ongoing',
+    period: '2025 - ongoing',
     role: 'Development',
     status: 'r&d',
     featured: false,
@@ -147,7 +145,7 @@ export const projects: Project[] = [
     designation: '05',
     title: 'LLM Training & Inference',
     tagline: 'Small language model trained on a Reddit conversation dataset.',
-    period: '2025 — ongoing',
+    period: '2025 - ongoing',
     role: 'Development',
     status: 'r&d',
     featured: false,

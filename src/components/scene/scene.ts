@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Ambient space background: starfield, subtle nebula, and a slow-drifting,
 // slow-rotating asteroid. No scroll binding, no engine flames.
 // Slight pointer parallax. Respects prefers-reduced-motion.
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface SceneHandle {
-  /** Kept for compatibility — no-op (no more impact/flame effect). */
+  /** Kept for compatibility - no-op (no more impact/flame effect). */
   setImpact(value: number): void;
   destroy(): void;
 }
@@ -64,7 +62,7 @@ export function initScene(canvas: HTMLCanvasElement): SceneHandle {
   );
   camera.position.set(0, 0, 18);
 
-  // ── Lighting (cold, consistent with Nova tokens) ───────────────────────────
+  // Lighting (cold, consistent with Nova tokens)
   const ambient = new THREE.AmbientLight(0x16323a, 1.0);
   scene.add(ambient);
   const key = new THREE.DirectionalLight(COLORS.starCool, 0.9);
@@ -74,7 +72,7 @@ export function initScene(canvas: HTMLCanvasElement): SceneHandle {
   rimLight.position.set(8, -3, 4);
   scene.add(rimLight);
 
-  // ── Starfield ──────────────────────────────────────────────────────────────
+  //  Starfield 
   const STAR_COUNT = prefersReduced ? 700 : 1700;
   const starGeo = new THREE.BufferGeometry();
   const starPos = new Float32Array(STAR_COUNT * 3);
@@ -106,7 +104,7 @@ export function initScene(canvas: HTMLCanvasElement): SceneHandle {
   const stars = new THREE.Points(starGeo, starMat);
   scene.add(stars);
 
-  // ── Nebula (soft sprites, pushed far into the background) ──────────────────
+  //  Nebula (soft sprites, pushed far into the background) 
   const nebula = new THREE.Group();
   const nebTex = radialTexture('rgba(40,129,129,0.55)');
   [
@@ -129,7 +127,7 @@ export function initScene(canvas: HTMLCanvasElement): SceneHandle {
   });
   scene.add(nebula);
 
-  // ── Asteroid (cold rock, subtle halo) ──────────────────────────────────────
+  //  Asteroid (cold rock, subtle halo) 
   const asteroid = new THREE.Group();
   const rockGeo = new THREE.IcosahedronGeometry(1.9, 2);
   const pos = rockGeo.attributes.position as THREE.BufferAttribute;
@@ -171,7 +169,7 @@ export function initScene(canvas: HTMLCanvasElement): SceneHandle {
   asteroid.position.set(6.5, 4.5, -2);
   scene.add(asteroid);
 
-  // ── State & loop ───────────────────────────────────────────────────────────
+  // State & loop 
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let running = true;
 

@@ -1,6 +1,6 @@
 # louis-potevin.dev
 
-Professional portfolio of **Louis Potevin** — full-stack developer.
+Professional portfolio of **Louis Potevin** - full-stack developer.
 Static multi-page website built with **Astro + TypeScript + Sass**, styled
 **exclusively** by the in-house design system **`@unkn0wndo3s/nova-design-system`**
 (tokens, components), featuring a 3D space background controlled via scrolling.
@@ -28,9 +28,9 @@ compatibility with Astro 7 in its `peerDependencies`. The **`.npmrc`**
 All modifiable content is centralized. Values to be confirmed are
 marked with `TODO` in the code :
 
-- **`src/data/site.ts`** — name, role, email, external links (Gitea, GitHub,
+- **`src/data/site.ts`** - name, role, email, external links (Gitea, GitHub,
 npm, LinkedIn). In particular, verify :
-- **`src/data/projects.ts`** — la liste des projets (les « stations »).
+- **`src/data/projects.ts`** - la liste des projets (les « stations »).
   Chaque entrée : résumé, contexte, contributions, stack, liens.
 
 ---

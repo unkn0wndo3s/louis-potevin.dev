@@ -15,7 +15,7 @@ export interface Props {
 }
 
 const {
-  title = 'Louis Potevin — Full-stack Developer (front, back, web)',
+  title = 'Louis Potevin - Full-stack Developer (front, back, web)',
   description = "Louis Potevin, full-stack web developer: front-end, back-end, TypeScript, Astro, Node. Available for a permanent contract (CDI) starting September 2026, anywhere in France or remote.",
   keywords = [],
 } = Astro.props;
@@ -91,7 +91,7 @@ const personLd = {
 const siteLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: `${site.name} — Portfolio`,
+  name: `${site.name} - Portfolio`,
   url: Astro.site?.href ?? 'https://louis-potevin.dev',
   inLanguage: ['en-US', 'fr-FR'],
 };
@@ -113,7 +113,7 @@ const siteLd = {
     <link rel="canonical" href={canonical} />
 
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={`${site.name} — Portfolio`} />
+    <meta property="og:site_name" content={`${site.name} - Portfolio`} />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="fr_FR" />
     <meta property="og:title" content={title} />
