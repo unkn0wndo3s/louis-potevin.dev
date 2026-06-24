@@ -110,7 +110,7 @@ export const projects: Project[] = [
     contributions: [
       'Full integration of Nova tokens and components.',
       'Respects prefers-reduced-motion and degrades gracefully when WebGL is unavailable.',
-      'Current Lighthouse scores: Accessibility 100, Best Practices 100, SEO 92, Performance 55 (optimization in progress).',
+      'Current Lighthouse scores: Accessibility 100, Best Practices 100, SEO 92, Performance 92.',
       'Roadmap: multilingual version, dark/light mode toggle. No audience data yet (site just went live), no CV download for now.',
     ],
     stack: [
