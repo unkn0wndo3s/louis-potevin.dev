@@ -4,9 +4,9 @@ import { Send } from '@lucide/astro';
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const links = [
-  { href: '/', label: 'Accueil' },
-  { href: '/work', label: 'Projets' },
-  { href: '/about', label: 'À propos' },
+  { href: '/', label: 'Home' },
+  { href: '/work', label: 'Projects' },
+  { href: '/about', label: 'About me' },
   { href: '/contact', label: 'Contact' },
 ];
 const isActive = (href: string) =>
@@ -28,7 +28,7 @@ const isActive = (href: string) =>
     }
     <Button slot="right" type="primary" size="sm" href="/contact">
       <Send slot="icon-left" size={15} />
-      Établir le contact
+      Get in touch
     </Button>
   </Navbar>
 </div>
