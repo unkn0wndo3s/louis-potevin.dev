@@ -1,5 +1,5 @@
 ---
-import { Github, Gitea, Npm } from 'simple-icons-astro';
+import BrandIcon from './BrandIcon.astro';
 import BrandLinkedin from './BrandLinkedin.astro';
 import { site } from '../data/site';
 import { getLocaleFromUrl, useTranslations } from '../i18n';
@@ -18,13 +18,13 @@ const year = new Date().getFullYear();
 
     <nav class="footer__links" aria-label="Social">
       <a href={site.links.gitea.url} title="Gitea" rel="me noopener" target="_blank">
-        <Gitea size={20} aria-hidden="true" /><span class="sr-only">Gitea</span>
+        <BrandIcon icon="Gitea" size={20} color="current" /><span class="sr-only">Gitea</span>
       </a>
       <a href={site.links.github.url} title="GitHub" rel="me noopener" target="_blank">
-        <Github size={20} aria-hidden="true" /><span class="sr-only">GitHub</span>
+        <BrandIcon icon="Github" size={20} color="current" /><span class="sr-only">GitHub</span>
       </a>
       <a href={site.links.npm.url} title="npm" rel="me noopener" target="_blank">
-        <Npm size={20} aria-hidden="true" /><span class="sr-only">npm</span>
+        <BrandIcon icon="Npm" size={20} color="current" /><span class="sr-only">npm</span>
       </a>
       <a href={site.links.linkedin.url} title="LinkedIn" rel="me noopener" target="_blank">
         <BrandLinkedin size={20} /><span class="sr-only">LinkedIn</span>

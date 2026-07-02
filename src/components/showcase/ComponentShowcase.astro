@@ -28,7 +28,12 @@ import {
 } from '@unkn0wndo3s/nova-design-system';
 import Eyebrow from '../Eyebrow.astro';
 import { getLocaleFromUrl, useTranslations } from '../../i18n';
+import { NDS_COMPONENTS, NDS_COMPONENT_COUNT, NDS_PACKAGE, getNdsVersion } from '../../lib/ndsMeta';
 import type { Localized } from '../../data/projects';
+
+// Live metadata: component list parsed from the installed package,
+// version fetched from the npm registry at build time.
+const ndsVersion = await getNdsVersion();
 
 const locale = getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);
@@ -166,11 +171,7 @@ const scatter = [
   [0, 22], [36, 2],
 ];
 
-const library = [
-  'Avatar', 'Badge', 'Breadcrumb', 'Button', 'Card', 'Checkbox', 'Link', 'ListItem',
-  'LoadingBar', 'Modal', 'Navbar', 'Notification', 'NumericStepper', 'Pagination',
-  'Radio', 'Select', 'Sidebar', 'Tab', 'TextField', 'Toggle', 'Tooltip',
-];
+const library = NDS_COMPONENTS;
 
 const actLabels: Record<string, Localized> = {
   a1: { fr: 'Acte I - Tout part des tokens.', en: 'Act I - Everything starts with tokens.' },
@@ -317,11 +318,10 @@ const actLabels: Record<string, Localized> = {
         ))}
       </ul>
       <div class="stats">
-        <p><strong data-count-to="29">0</strong><span>{locale === 'fr' ? 'composants' : 'components'}</span></p>
-        <p><strong data-count-to="6">0</strong><span>{locale === 'fr' ? 'catégories' : 'categories'}</span></p>
-        <p><strong>v1.2.1</strong><span>npm</span></p>
+        <p><strong data-count-to={NDS_COMPONENT_COUNT}>0</strong><span>{locale === 'fr' ? 'composants' : 'components'}</span></p>
+        <p><strong>v{ndsVersion}</strong><span>{locale === 'fr' ? 'dernière version npm' : 'latest npm version'}</span></p>
       </div>
-      <p class="install"><code data-typed>npm install @unkn0wndo3s/nova-design-system</code></p>
+      <p class="install"><code data-typed>{`npm install ${NDS_PACKAGE}`}</code></p>
     </div>
 
     <p class="hint" aria-hidden="true">{t('nds.showcase.hint')}</p>
@@ -330,6 +330,7 @@ const actLabels: Record<string, Localized> = {
 
 <script>
   import { scrub, clamp01, window01 } from '../../lib/scrub';
+  import { getSmooth } from '../../lib/smooth';
 
   function init() {
     const root = document.querySelector<HTMLElement>('[data-forge]');
@@ -364,6 +365,7 @@ const actLabels: Record<string, Localized> = {
 
     let lastIdx = -1;
     let lastLabel = -1;
+    let lastState = { p: 0, idx: 0, dwellT: 0.5, inTunnel: 0 };
 
     scrub(root, (p) => {
       // ---- Act I: scattered tokens converge, then hand over. ----
@@ -379,8 +381,13 @@ const actLabels: Record<string, Localized> = {
       act2.style.visibility = inTunnel > 0.01 ? 'visible' : 'hidden';
 
       const tp = clamp01((p - A2[0]) / (A2[1] - A2[0])); // 0..1 inside act II
-      const f = tp * n; // fractional slide index
-      const idx = Math.min(n - 1, Math.floor(f));
+      const f0 = tp * n;
+      const idx = Math.min(n - 1, Math.floor(f0));
+      // Dwell: each slide travels in, HOLDS pin-sharp at the center for the
+      // middle of its window, then leaves - small scrolls don't blur it.
+      const dwellT = f0 - idx;
+      const f = idx + (0.5 * window01(dwellT, 0, 0.38) + 0.5 * window01(dwellT, 0.62, 1));
+      lastState = { p, idx, dwellT, inTunnel };
 
       slides.forEach((el, i) => {
         const d = f - i - 0.5; // 0 when slide i is centered
@@ -425,6 +432,38 @@ const actLabels: Record<string, Localized> = {
         }, 160);
       }
     });
+
+    // Idle snap: if scrolling pauses while a component is half in/out, glide
+    // to the position where it sits pin-sharp. Soft lock - any new scroll
+    // input takes over instantly.
+    let idle = 0;
+    let snapped = true;
+    let lastT = performance.now();
+    const snapLoop = (now: number) => {
+      const dt = Math.min((now - lastT) / 1000, 0.05);
+      lastT = now;
+      const lenis = getSmooth();
+      const v = lenis?.velocity ?? 0;
+      if (Math.abs(v) > 1.5) {
+        idle = 0;
+        snapped = false;
+      } else {
+        idle += dt;
+      }
+      if (!snapped && idle > 0.35 && lenis && lastState.inTunnel > 0.5) {
+        const off = Math.abs(lastState.dwellT - 0.5);
+        if (off > 0.03 && off < 0.47) {
+          snapped = true;
+          const rect = root.getBoundingClientRect();
+          const top = lenis.scroll + rect.top;
+          const total = rect.height - window.innerHeight;
+          const pTarget = A2[0] + ((lastState.idx + 0.5) / n) * (A2[1] - A2[0]);
+          lenis.scrollTo(top + pTarget * total, { duration: 0.8 });
+        }
+      }
+      requestAnimationFrame(snapLoop);
+    };
+    requestAnimationFrame(snapLoop);
   }
 
   init();

@@ -59,6 +59,14 @@ nébuleuses, ceinture d'astéroïdes (une balise lumineuse par projet) et portai
 - Progressive enhancement : le même markup rend une page normale empilée sans JS,
   sans WebGL ou avec `prefers-reduced-motion` (la classe `html.cinema` n'est jamais posée).
 
+## Métadonnées NDS toujours à jour
+
+`src/lib/ndsMeta.ts` : la liste des composants (et leur nombre) est parsée depuis
+l'index d'exports du paquet installé, et la version est récupérée sur le registre
+npm **au moment du build** (fallback : version installée si hors-ligne). La forge,
+les textes de la home et la fiche projet NDS lisent tous cette source — plus aucun
+chiffre en dur à maintenir.
+
 ## /docs — la documentation technique
 
 Une page dédiée (`/docs`, FR/EN) documente tout le fonctionnement du site en 13 chapitres,
@@ -88,7 +96,10 @@ Toutes épinglées (section haute + stage sticky), pilotées par `scrub.ts`, fal
 
 ## À faire côté déploiement
 
-1. **`public/og-fr.png` et `public/og-en.png`** (1200×630) — visuels de partage.
+1. **Désactiver « Email Address Obfuscation »** dans Cloudflare (Scrape Shield) :
+   sinon CF injecte `email-decode.min.js`, casse le mailto sans JS et affiche
+   « [email protected] » aux crawlers de recruteurs.
+2. **`public/og-fr.png` et `public/og-en.png`** (1200×630) — visuels de partage.
 2. Brancher le workflow **Gitea Actions** existant (`npm ci && npm run build`, publier `dist/`).
 3. `/about` et `/contact` redirigent vers `/#about` et `/#contact` (config Astro) —
    les anciennes URL indexées ne cassent pas.

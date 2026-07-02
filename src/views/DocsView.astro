@@ -16,6 +16,7 @@ import { Badge } from '@unkn0wndo3s/nova-design-system';
 import { Code } from 'astro:components';
 import { breadcrumbLd } from '../lib/seo';
 import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+import { getNdsVersion } from '../lib/ndsMeta';
 
 import configRaw from '../../astro.config.mjs?raw';
 import smoothRaw from '../lib/smooth.ts?raw';
@@ -29,6 +30,7 @@ import enHomeRaw from '../pages/en/index.astro?raw';
 const locale = getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);
 const L = (fr: string, en: string) => (locale === 'fr' ? fr : en);
+const ndsVersion = await getNdsVersion();
 
 /** Slice a source between two unique markers - fails the build if missing. */
 function slice(src: string, from: string, to: string, label: string): string {
@@ -44,12 +46,13 @@ const snips = {
   scrub: scrubRaw.trimEnd(),
   segments: slice(voyageRaw, '  // --- Timeline from the DOM', '  // --- Scene ---', 'segments'),
   camera: slice(voyageRaw, '  // Flight path:', '  // Starfield', 'camera path'),
-  camTick: slice(voyageRaw, '    // Camera along the path.', '    // Nebulae drift.', 'camera tick'),
+  camTick: slice(voyageRaw, '    // Camera along the path', '    // Nebulae drift.', 'camera tick'),
   overlay: slice(voyageRaw, '  const applyOverlay', '  // --- Frame loop', 'overlay'),
   cinemaCss: slice(homeRaw, '  /* Cinema: fixed overlays', '  /* ------------------------------- Cards', 'cinema css'),
-  energy: slice(voyageRaw, '    // Scroll → timeline progress', '    // Camera along the path.', 'energy'),
+  energy: slice(voyageRaw, '    // Scroll → timeline progress', '    // Idle snap:', 'energy'),
   collisions: slice(voyageRaw, '    // Collisions only while agitated', '    belt.instanceMatrix', 'collisions'),
   seek: slice(voyageRaw, '  const seek = (id: string', '  dots.forEach', 'seek'),
+  snap: slice(voyageRaw, '    // Idle snap:', '    // Camera along the path', 'snap'),
   gate: slice(voyageRaw, '  // --- Capability gate', '  // --- Timeline from the DOM', 'gate'),
   infraDash: slice(infraRaw, '  .edge {', '  .node {', 'infra dash'),
   sorterMeasure: slice(sorterRaw, '    const measure = () => {', '    let lastP = 0;', 'sorter measure'),
@@ -98,7 +101,7 @@ const miniFiles = [
       <Badge type="primary" variant="soft">Three.js</Badge>
       <Badge type="primary" variant="soft">Lenis</Badge>
       <Badge type="primary" variant="soft">Astro 7</Badge>
-      <Badge type="primary" variant="soft">NDS v1.2.1</Badge>
+      <Badge type="primary" variant="soft">{`NDS v${ndsVersion}`}</Badge>
       <span class="reading">{t('docs.reading')}</span>
     </p>
   </header>
@@ -251,6 +254,11 @@ const miniFiles = [
         <Code code={snips.segments} lang="ts" theme={THEME} />
         <Code code={snips.camera} lang="ts" theme={THEME} />
         <Code code={snips.camTick} lang="ts" theme={THEME} />
+        <p>{L(
+          "Deux garde-fous là-dessus, ajoutés après les premiers tests. D'abord une courbe de « dwell » : dans chaque segment, la caméra parcourt les 38 premiers pourcents, se fige au centre, puis repart - un petit coup de molette pendant qu'une carte est affichée ne fait presque rien bouger. Ensuite un snap au repos : si le scroll s'arrête au milieu d'un segment, on glisse doucement vers son centre pour cadrer l'étape proprement. C'est un verrou souple - le moindre nouvel input de scroll reprend la main :",
+          "Two guard rails on top of that, added after the first tests. First a “dwell” curve: within each segment, the camera travels the first 38%, holds at the center, then moves on - a small wheel nudge while a card is displayed barely shifts anything. Then an idle snap: if scrolling stops mid-segment, we glide gently to its center to frame the step cleanly. It's a soft lock - any new scroll input takes over instantly:",
+        )}</p>
+        <Code code={snips.snap} lang="ts" theme={THEME} />
       </section>
 
       <!-- ============================ 05 ================================ -->
@@ -415,8 +423,6 @@ const miniFiles = [
       </section>
     </div>
   </div>
-</BaseLayout>
-
 <script>
   import { scrub, clamp01, window01 } from '../lib/scrub';
   import { getSmooth } from '../lib/smooth';
@@ -703,6 +709,8 @@ const miniFiles = [
     }
   }
 </script>
+</BaseLayout>
+
 
 <style lang="scss">
   @use '../styles/type' as type;

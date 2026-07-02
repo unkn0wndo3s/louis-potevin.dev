@@ -1,13 +1,9 @@
 ---
 /**
- * Renders a technology icon by simple-icons name, with its label.
- * Icons are imported explicitly so the build only ships what's used.
+ * Renders a technology icon (via BrandIcon) with its label. The icon is
+ * decorative: only the visible label is announced, once.
  */
-import {
-  Apache, Astro as AstroIcon, Cloudflare, Docker, Figma, Git, Gitea,
-  Javascript, Linux, Nodedotjs, Npm, Postgresql, Python, Rust, Sass,
-  Threedotjs, Typescript, Vuedotjs,
-} from 'simple-icons-astro';
+import BrandIcon from './BrandIcon.astro';
 
 export interface Props {
   name: string;
@@ -15,18 +11,12 @@ export interface Props {
   size?: number;
 }
 
-const icons: Record<string, (props: Record<string, unknown>) => unknown> = {
-  Apache, Astro: AstroIcon, Cloudflare, Docker, Figma, Git, Gitea,
-  Javascript, Linux, Nodedotjs, Npm, Postgresql, Python, Rust, Sass,
-  Threedotjs, Typescript, Vuedotjs,
-};
 
 const { name, icon, size = 18 } = Astro.props;
-const Icon = icons[icon];
 ---
 
 <span class="tech">
-  {Icon && <Icon size={size} aria-hidden="true" />}
+  <BrandIcon icon={icon} size={size} />
   <span>{name}</span>
 </span>
 

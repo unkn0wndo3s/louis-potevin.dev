@@ -56,6 +56,13 @@ const smoothstep = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+/**
+ * Dwell curve: rises to 0.5 over the first 38% of a segment, HOLDS through
+ * the middle, finishes over the last 38%. Applied to the camera's progress
+ * inside each segment, so every step of the voyage locks in place while the
+ * matching card is on screen - small scroll moves barely shift the view.
+ */
+const dwell = (t: number) => 0.5 * smoothstep(0, 0.38, t) + 0.5 * smoothstep(0.62, 1, t);
 
 export function mountVoyage(opts: {
   canvas: HTMLCanvasElement;
@@ -350,10 +357,18 @@ export function mountVoyage(opts: {
   let progress = 0;
   let downEnergy = 0;
   let upEnergy = 0;
+  let idleTime = 0;
+  let snapped = true; // don't snap on load
   let elapsed = 0;
   let last = performance.now();
   let running = true;
   let frame = 0;
+  // FPS watchdog: warm up 1.5s, then sample 2.5s. Below ~24fps the machine
+  // can't hold the scene (WebGL existing doesn't mean a GPU worth using) -
+  // tear down and give them the static page instead of a slideshow.
+  let fpsFrames = 0;
+  let fpsTime = 0;
+  let fpsChecked = false;
 
   const camTarget = new THREE.Vector3();
   const tmp = new THREE.Vector3();
@@ -373,6 +388,18 @@ export function mountVoyage(opts: {
     last = now;
     elapsed += dt;
 
+    if (!fpsChecked && elapsed > 1.5) {
+      fpsFrames++;
+      fpsTime += dt;
+      if (fpsTime > 2.5) {
+        fpsChecked = true;
+        if (fpsFrames / fpsTime < 24) {
+          dispose();
+          return;
+        }
+      }
+    }
+
     // Scroll → timeline progress + belt energies (Lenis keeps this smooth).
     const raw = lenis.scroll / maxScroll();
     progress = Math.min(1, Math.max(0, raw));
@@ -380,8 +407,36 @@ export function mountVoyage(opts: {
     downEnergy = lerp(downEnergy, Math.min(1, Math.max(0, v / 55)), 0.08);
     upEnergy = lerp(upEnergy, Math.min(1, Math.max(0, -v / 55)), 0.08);
 
-    // Camera along the path.
-    const u = progress;
+    // Idle snap: once the user pauses inside a segment, settle on its center
+    // so the current step is framed cleanly (a soft scroll lock, not a jail -
+    // any new scroll input takes over immediately).
+    if (Math.abs(v) > 1.5) {
+      idleTime = 0;
+      snapped = false;
+    } else {
+      idleTime += dt;
+    }
+    if (!snapped && idleTime > 0.35 && progress > 0.005 && progress < 0.995) {
+      const seg = segments.find((s) => progress >= s.start && progress < s.end);
+      if (seg) {
+        const center = seg.start + (seg.end - seg.start) * 0.5;
+        const off = Math.abs(progress - center);
+        if (off > 0.003 && off < (seg.end - seg.start) * 0.5) {
+          snapped = true;
+          lenis.scrollTo(center * maxScroll(), { duration: 0.9 });
+        }
+      }
+    }
+
+    // Camera along the path - with a per-segment dwell so each step locks.
+    let u = progress;
+    for (const s of segments) {
+      if (progress >= s.start && progress <= s.end) {
+        const span = s.end - s.start;
+        u = s.start + span * dwell((progress - s.start) / span);
+        break;
+      }
+    }
     path.getPointAt(u, camera.position);
     path.getPointAt(Math.min(1, u + 0.045), camTarget);
     // Ease the gaze toward the active beacon.
@@ -501,17 +556,21 @@ export function mountVoyage(opts: {
 
   dots.forEach((d) => d.addEventListener('click', () => seek(d.dataset.voyageDot!)));
 
+  const dispose = () => {
+    cancelAnimationFrame(frame);
+    window.removeEventListener('resize', onResize);
+    document.removeEventListener('visibilitychange', onVisibility);
+    renderer.dispose();
+    document.documentElement.classList.remove('cinema');
+    container.style.height = '';
+    for (const s of segments) {
+      s.el.removeAttribute('style');
+      s.el.classList.remove('is-active');
+    }
+  };
+
   applyOverlay(0);
   frame = requestAnimationFrame(tick);
 
-  return {
-    seek,
-    dispose() {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', onResize);
-      document.removeEventListener('visibilitychange', onVisibility);
-      renderer.dispose();
-      document.documentElement.classList.remove('cinema');
-    },
-  };
+  return { seek, dispose };
 }

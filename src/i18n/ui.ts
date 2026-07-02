@@ -1,10 +1,12 @@
+import { NDS_COMPONENT_COUNT } from '../lib/ndsMeta';
+
 /**
  * UI dictionaries. Keys are grouped by surface (nav, home, work, about, contact, footer).
  * Project content lives in `src/data/projects.ts` (localized per field).
  */
 const fr = {
   // Meta
-  'meta.home.title': 'Louis Potevin - Développeur full-stack (front, back, web)',
+  'meta.home.title': 'Louis Potevin - Développeur full-stack TypeScript/Node · Limoges & remote',
   'meta.home.description':
     "Louis Potevin, développeur web full-stack : front-end, back-end, TypeScript, Astro, Node. Disponible en CDI dès septembre 2026 et en freelance, partout en France ou en remote.",
   'meta.work.title': 'Projets - Louis Potevin, développeur full-stack',
@@ -23,7 +25,7 @@ const fr = {
   // Nav
   'nav.home': 'Accueil',
   'nav.work': 'Projets',
-  'nav.docs': 'Docs',
+  'nav.docs': "Comment c'est fait",
   'nav.about': 'À propos',
   'nav.contact': 'Contact',
   'nav.cta': 'Me contacter',
@@ -38,25 +40,24 @@ const fr = {
   // Home
   'home.hero.title.role': 'Développeur full-stack',
   'home.hero.lead':
-    "Je conçois et développe des applications web de bout en bout : de l'interface au back-end, jusqu'au déploiement en production. Aussi à l'aise sur le composant que vous regardez que sur le service qui le sert.",
+    "Deux ans sur une application métier en production chez Legrand, un design system publié sur npm, une infra que j'héberge moi-même. Ce site tourne sur tout ça.",
   'home.hero.viewProjects': 'Voir les projets',
   'home.hero.contact': 'Me contacter',
 
   'home.profile.eyebrow': 'Profil',
   'home.profile.title': 'Un profil full-stack, à l’aise sur toute la chaîne.',
   'home.profile.body1':
-    "J'ai l'expérience d'applications métier en production (alternance chez Legrand) et de projets personnels menés jusqu'au bout : un design system publié sur npm, une infrastructure auto-hébergée, des outils en Rust et Python.",
+    "Depuis avril 2025, je développe une application métier utilisée dans les ateliers de production de Legrand France - stage, puis job d'été, puis alternance, toujours sur le même produit. Du code que de vraies équipes utilisent tous les jours (sous NDA, donc pas de détails ici).",
   'home.profile.body2':
-    'Ce qui me motive : maîtriser le cycle complet - le composant que vous regardez, le service qui le délivre et la CI qui le déploie. Ce site en est la preuve, construit entièrement sur mon propre design system.',
+    "À côté, je construis mes propres outils : Nova Design System sur npm, un Gitea et sa CI sur mon VPS. Pas pour la ligne de CV - parce que maintenir un truc dans la durée apprend plus que le recommencer.",
   'home.profile.front.title': 'Front-end',
-  'home.profile.front.body':
-    'Interfaces soignées et accessibles avec Astro, Vue.js, TypeScript et Sass - jusqu’au design system maison.',
+  'home.profile.front.body': `Vue.js chez Legrand, Astro sur mes projets, TypeScript partout. Et un design system maison de ${NDS_COMPONENT_COUNT} composants pour ne rien réécrire deux fois.`,
   'home.profile.back.title': 'Back-end',
   'home.profile.back.body':
-    'Services et API côté serveur, modélisation de données et logique métier avec Node et PostgreSQL.',
+    'Node et Express en production chez Legrand, PostgreSQL pour les données.',
   'home.profile.ops.title': 'Outils & déploiement',
   'home.profile.ops.body':
-    'Conteneurisation Docker, CI/CD automatisée et mise en production de bout en bout.',
+    "Mon Gitea, mes runners, mon Apache, mon VPS : quand ce site se déploie, c'est ma CI qui tourne, pas celle de quelqu'un d'autre.",
 
   'home.projects.eyebrow': 'Projets phares',
   'home.projects.title': 'Projets',
@@ -66,16 +67,16 @@ const fr = {
   'home.stack.eyebrow': 'Stack technique',
   'home.stack.title': 'Mes outils du quotidien.',
 
-  'home.cta.title': 'On en parle ?',
+  'home.cta.title': 'Un poste, une mission, une question ?',
   'home.cta.body':
-    'Je cherche un poste full-stack en CDI dès septembre 2026, et je suis ouvert aux missions freelance. Partout en France, sur site ou en remote.',
+    "CDI full-stack à partir de septembre 2026, freelance dès maintenant. Basé à Limoges, mobile partout en France, à l'aise en remote. Un mail suffit.",
   'home.cta.contact': 'Me contacter',
   'home.cta.more': 'En savoir plus',
 
   // Work
   'work.title': 'Projets',
   'work.lead':
-    "Chaque projet est mené comme un produit : design, code, tests, CI/CD et mise en production. Cliquez pour explorer le détail de chacun.",
+    "Un design system sur npm, une infra auto-hébergée, ce portfolio, et un outil Rust en cours. Le détail, les choix et les ratés de chacun.",
   'work.status.live': 'En production',
   'work.status.maintained': 'Maintenu',
   'work.status.wip': 'En cours',
@@ -128,9 +129,9 @@ const fr = {
   // Voyage (home cinematic scroll)
   'voyage.hint': 'Scrollez - le voyage commence',
   'voyage.progress': 'Progression du voyage',
-  'home.projects.intro.title': 'Quatre projets, menés comme des produits.',
+  'home.projects.intro.title': 'Un design system, une infra, un outil Rust. Et ce site.',
   'home.projects.intro.body':
-    'Design, code, tests, CI/CD, production : chaque projet va au bout. En route.',
+    'Quatre projets publics, avec leur statut réel - y compris ce qui est encore en chantier.',
   'home.about.summary':
     "BUT MMI (dév. web) à l'IUT du Limousin, et deux ans chez Legrand sur la même application métier - du stage à l'alternance.",
 
@@ -164,7 +165,7 @@ const fr = {
 } as const;
 
 const en: Record<UIKey, string> = {
-  'meta.home.title': 'Louis Potevin - Full-stack Developer (front, back, web)',
+  'meta.home.title': 'Louis Potevin - Full-stack TypeScript/Node developer · Limoges & remote',
   'meta.home.description':
     'Louis Potevin, full-stack web developer: front-end, back-end, TypeScript, Astro, Node. Available for a permanent contract (CDI) from September 2026 and for freelance work, anywhere in France or remote.',
   'meta.work.title': 'Projects - Louis Potevin, full-stack developer',
@@ -182,7 +183,7 @@ const en: Record<UIKey, string> = {
 
   'nav.home': 'Home',
   'nav.work': 'Projects',
-  'nav.docs': 'Docs',
+  'nav.docs': "How it's built",
   'nav.about': 'About me',
   'nav.contact': 'Contact',
   'nav.cta': 'Get in touch',
@@ -195,25 +196,24 @@ const en: Record<UIKey, string> = {
 
   'home.hero.title.role': 'Full-stack developer',
   'home.hero.lead':
-    'I design and build web applications end to end: from the interface to the back-end, all the way to production. Equally at home on the component you look at and the service that delivers it.',
+    'Two years on a business application in production at Legrand, a design system published on npm, infrastructure I host myself. This site runs on all of it.',
   'home.hero.viewProjects': 'View projects',
   'home.hero.contact': 'Contact me',
 
   'home.profile.eyebrow': 'Profile',
   'home.profile.title': 'A full-stack profile, comfortable across the entire stack.',
   'home.profile.body1':
-    'I have hands-on experience with business applications in production (apprenticeship at Legrand) and personal projects shipped for real: a design system published on npm, self-hosted infrastructure, tools built with Rust and Python.',
+    "Since April 2025 I've been building a business application used in Legrand France's production workshops - internship, then summer job, then apprenticeship, always on the same product. Code that real teams use every day (under NDA, so no details here).",
   'home.profile.body2':
-    'What drives me: owning the whole cycle - the component you look at, the service that delivers it, the CI that deploys it. This site is proof, built entirely on my own design system.',
+    "On the side I build my own tools: Nova Design System on npm, a Gitea and its CI on my VPS. Not for the résumé line - because maintaining something over time teaches more than restarting it.",
   'home.profile.front.title': 'Front-end',
-  'home.profile.front.body':
-    'Polished, accessible interfaces with Astro, Vue.js, TypeScript and Sass - all the way to an in-house design system.',
+  'home.profile.front.body': `Vue.js at Legrand, Astro on my own projects, TypeScript everywhere. Plus a ${NDS_COMPONENT_COUNT}-component in-house design system so nothing gets written twice.`,
   'home.profile.back.title': 'Back-end',
   'home.profile.back.body':
-    'Server-side services and APIs, data modeling and business logic with Node and PostgreSQL.',
+    'Node and Express in production at Legrand, PostgreSQL for the data.',
   'home.profile.ops.title': 'Tools & deployment',
   'home.profile.ops.body':
-    'Docker containerization, automated CI/CD and end-to-end production deployment.',
+    "My Gitea, my runners, my Apache, my VPS: when this site deploys, it's my CI running, not someone else's.",
 
   'home.projects.eyebrow': 'Featured projects',
   'home.projects.title': 'Projects',
@@ -223,15 +223,15 @@ const en: Record<UIKey, string> = {
   'home.stack.eyebrow': 'Tech stack',
   'home.stack.title': 'My everyday tools.',
 
-  'home.cta.title': "Let's talk!",
+  'home.cta.title': 'A role, a mission, a question?',
   'home.cta.body':
-    'I am looking for a full-stack permanent position from September 2026, and I am open to freelance work. Anywhere in France, on-site or remote.',
+    'Full-stack permanent role from September 2026, freelance right now. Based in Limoges, mobile anywhere in France, comfortable remote. One email is all it takes.',
   'home.cta.contact': 'Contact me',
   'home.cta.more': 'Learn more',
 
   'work.title': 'Projects',
   'work.lead':
-    'Every project is run like a product: design, code, tests, CI/CD and production. Click through to explore each one in detail.',
+    'A design system on npm, self-hosted infrastructure, this portfolio, and a Rust tool in progress. The details, choices and missteps of each.',
   'work.status.live': 'Live',
   'work.status.maintained': 'Maintained',
   'work.status.wip': 'In progress',
@@ -279,9 +279,9 @@ const en: Record<UIKey, string> = {
 
   'voyage.hint': 'Scroll - the journey begins',
   'voyage.progress': 'Journey progress',
-  'home.projects.intro.title': 'Four projects, run like products.',
+  'home.projects.intro.title': 'A design system, an infra, a Rust tool. And this site.',
   'home.projects.intro.body':
-    'Design, code, tests, CI/CD, production: every project ships for real. Off we go.',
+    'Four public projects, with their real status - including what is still under construction.',
   'home.about.summary':
     'BUT MMI degree (web dev) at IUT du Limousin, and two years at Legrand on the same business application - from internship to apprenticeship.',
 

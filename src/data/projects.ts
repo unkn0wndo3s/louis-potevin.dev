@@ -3,6 +3,8 @@ import type { Locale } from '../i18n';
 /** A string localized in both site languages. */
 export type Localized = Record<Locale, string>;
 
+import { NDS_COMPONENT_COUNT } from '../lib/ndsMeta';
+
 export type ProjectStatus = 'live' | 'maintained' | 'wip';
 
 export interface ProjectLink {
@@ -35,8 +37,8 @@ export const projects: Project[] = [
       en: 'Astro component library - tokens, accessibility, npm distribution.',
     },
     summary: {
-      fr: "29 composants Astro répartis en six familles, un système complet de tokens (couleur, typographie, espacement, rayons) et un thème clair/sombre piloté par variables CSS. Publié sur npm en v1.2.1, il propulse ce portfolio.",
-      en: 'A library of 29 Astro components across six families, a complete token system (color, typography, spacing, radius) and a light/dark theme driven by CSS variables. Published on npm at v1.2.1, it powers this portfolio.',
+      fr: `${NDS_COMPONENT_COUNT} composants Astro, un système complet de tokens (couleur, typographie, espacement, rayons) et un thème clair/sombre piloté par variables CSS. Publié sur npm, il propulse ce portfolio.`,
+      en: `A library of ${NDS_COMPONENT_COUNT} Astro components, a complete token system (color, typography, spacing, radius) and a light/dark theme driven by CSS variables. Published on npm, it powers this portfolio.`,
     },
     body: [
       {
@@ -53,7 +55,7 @@ export const projects: Project[] = [
       },
     ],
     highlights: [
-      { fr: '29 composants exportés, six familles', en: '29 exported components, six families' },
+      { fr: `${NDS_COMPONENT_COUNT} composants exportés sur npm`, en: `${NDS_COMPONENT_COUNT} components exported on npm` },
       { fr: 'Tokens couleur / typo / espacement / rayons, thème clair-sombre', en: 'Color / type / spacing / radius tokens, light-dark theme' },
       { fr: 'CI/CD Gitea Actions auto-hébergée, publication npm en ~15 s', en: 'Self-hosted Gitea Actions CI/CD, npm publish in ~15 s' },
       { fr: 'Licence maison : usage libre, monétisation du DS interdite', en: 'Custom license: free to use, monetizing NDS itself prohibited' },

@@ -1,0 +1,31 @@
+---
+/**
+ * Minimal, valid brand icon: one fill, no <title>, decorative by default.
+ * See src/lib/brandIcons.ts for why the simple-icons components aren't
+ * used directly.
+ */
+import { BRAND_ICONS } from '../lib/brandIcons';
+
+export interface Props {
+  icon: string;
+  size?: number;
+  /** 'brand' uses the official color; 'current' inherits text color. */
+  color?: 'brand' | 'current';
+}
+
+const { icon, size = 18, color = 'brand' } = Astro.props;
+const data = BRAND_ICONS[icon];
+---
+
+{data && (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill={color === 'brand' ? data.brand : 'currentColor'}
+    aria-hidden="true"
+  >
+    <path d={data.d} />
+  </svg>
+)}

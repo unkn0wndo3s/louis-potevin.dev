@@ -12,13 +12,11 @@ const locale = getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);
 const route = unlocalizePath(Astro.url.pathname);
 
-// About & Contact live on the home timeline - anchors seek the voyage there.
+// Only real pages in the main nav - no surprise anchors. Contact lives in
+// the CTA button (and on the home timeline); the brand links home.
 const links = [
-  { href: localizePath('/', locale), label: t('nav.home'), match: '/' },
   { href: localizePath('/work', locale), label: t('nav.work'), match: '/work' },
   { href: localizePath('/docs', locale), label: t('nav.docs'), match: '/docs' },
-  { href: localizePath('/#about', locale), label: t('nav.about'), match: '/about' },
-  { href: localizePath('/#contact', locale), label: t('nav.contact'), match: '/contact' },
 ];
 
 const isActive = (match: string) =>

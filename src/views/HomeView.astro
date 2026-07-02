@@ -11,9 +11,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Eyebrow from '../components/Eyebrow.astro';
 import TechIcon from '../components/TechIcon.astro';
-import BrandLinkedin from '../components/BrandLinkedin.astro';
-import { Copy, ChevronDown } from '@lucide/astro';
-import { Github, Gitea, Npm } from 'simple-icons-astro';
+import { Copy } from '@lucide/astro';
 import { Badge, Button } from '@unkn0wndo3s/nova-design-system';
 import { site, stack } from '../data/site';
 import { featuredProjects, projects, type Project } from '../data/projects';
@@ -55,15 +53,13 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
       <div class="card card--hero">
         <p class="hero-avail"><Badge type="success" variant="soft">{t('avail.badge')}</Badge> <span>{t('avail.line')}</span></p>
         <h1 class="hero-title">
-          <span class="hero-name">{site.name}</span>
+          <span class="hero-name">{site.name}</span><span class="sr-only">, </span>
           <span class="hero-role">{t('home.hero.title.role')}</span>
         </h1>
         <p class="hero-lead">{t('home.hero.lead')}</p>
         <div class="row">
           <Button type="primary" href={localizePath('/#projects', locale)}>{t('home.hero.viewProjects')}</Button>
-          <Button type="ghost" href={localizePath('/#contact', locale)}>{t('home.hero.contact')}</Button>
         </div>
-        <p class="hero-hint" aria-hidden="true"><ChevronDown size={16} /> {t('voyage.hint')}</p>
       </div>
     </section>
 
@@ -96,7 +92,7 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
 
     <!-- 04-07 · Un segment par projet, cartes alternées -->
     {voyageProjects.map((p, i) => (
-      <section
+      <div
         class={`seg seg--${i % 2 ? 'left' : 'right'}`}
         data-seg={`p-${p.slug}`}
         data-weight="1.15"
@@ -120,7 +116,7 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
             </Button>
           </div>
         </article>
-      </section>
+      </div>
     ))}
 
     <!-- 08 · Stack -->
@@ -148,12 +144,7 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
           </Button>
         </div>
         <p class="contact-email" data-email-text>{site.email}</p>
-        <nav class="socials" aria-label="Social">
-          <a href={site.links.github.url} target="_blank" rel="me noopener"><Github size={20} aria-hidden="true" /><span class="sr-only">GitHub</span></a>
-          <a href={site.links.gitea.url} target="_blank" rel="me noopener"><Gitea size={20} aria-hidden="true" /><span class="sr-only">Gitea</span></a>
-          <a href={site.links.npm.url} target="_blank" rel="me noopener"><Npm size={20} aria-hidden="true" /><span class="sr-only">npm</span></a>
-          <a href={site.links.linkedin.url} target="_blank" rel="me noopener"><BrandLinkedin size={20} /><span class="sr-only">LinkedIn</span></a>
-        </nav>
+        <p class="contact-where">{t('avail.where')}</p>
       </div>
     </section>
   </div>
@@ -165,8 +156,6 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
   <nav class="dots" aria-label={t('voyage.progress')}>
     {dots.map((id) => <button type="button" data-voyage-dot={id} aria-label={id}></button>)}
   </nav>
-</BaseLayout>
-
 <script>
   import { ensureSmooth } from '../lib/smooth';
   import type { VoyageHandle } from '../components/scene/voyage';
@@ -220,6 +209,8 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
   init();
   initCopy();
 </script>
+</BaseLayout>
+
 
 <style lang="scss">
   @use '../styles/type' as type;
@@ -262,24 +253,35 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
     translate: 0 -50%;
     z-index: 60;
     display: grid;
-    gap: 10px;
+    gap: 4px;
 
+    /* 22px hit area (touch target), 8px painted dot */
     button {
-      width: 8px;
-      height: 8px;
+      position: relative;
+      width: 22px;
+      height: 22px;
       padding: 0;
-      border: 1px solid var(--nds-neutral);
-      border-radius: var(--nds-radius-full);
+      border: none;
       background: transparent;
       cursor: pointer;
-      transition: background-color 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 
-      &.is-active {
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 50%;
+        width: 8px;
+        height: 8px;
+        translate: -50% -50%;
+        border: 1px solid var(--nds-neutral);
+        border-radius: var(--nds-radius-full);
+        transition: background-color 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+      }
+      &.is-active::before {
         background: var(--nds-accent);
         border-color: var(--nds-accent);
         transform: scale(1.35);
       }
-      &:hover {
+      &:hover::before {
         border-color: var(--nds-text);
       }
     }
@@ -408,19 +410,6 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
     max-width: 58ch;
     color: var(--nds-neutral);
   }
-  .hero-hint {
-    @include type.text-sm;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--nds-spacing-2xs);
-    margin: var(--nds-spacing-lg) 0 0;
-    color: var(--nds-disabled);
-    animation: hint 2.4s ease-in-out infinite;
-  }
-  @keyframes hint {
-    0%, 100% { transform: translateY(0); opacity: 0.7; }
-    50% { transform: translateY(6px); opacity: 1; }
-  }
 
   /* Profil */
   .pillars {
@@ -503,28 +492,11 @@ const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.s
     color: var(--nds-primary);
     word-break: break-all;
   }
-  .socials {
-    display: flex;
-    gap: var(--nds-spacing-md);
-
-    a {
-      display: grid;
-      place-items: center;
-      width: 44px;
-      height: 44px;
-      border: 1px solid var(--nds-border);
-      border-radius: var(--nds-radius-full);
-      color: var(--nds-text);
-      transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-
-      &:hover {
-        color: var(--nds-accent);
-        border-color: var(--nds-accent);
-        transform: translateY(-2px);
-      }
-    }
+  .contact-where {
+    @include type.text-sm;
+    margin: 0;
+    color: var(--nds-disabled);
   }
-
   .sr-only {
     position: absolute;
     width: 1px;
