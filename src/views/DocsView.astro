@@ -1,0 +1,1277 @@
+---
+/**
+ * /docs - "Sous le capot", version animée.
+ *
+ * The doc eats its own dog food: every concept ships with a live demo built
+ * on the exact mechanism it explains (scrub for the pinned ones, Lenis
+ * velocity for the physics one). Snippets are still pulled from the real
+ * source files at build time (`?raw` + markers), so they can't go stale.
+ *
+ * A center-band IntersectionObserver keeps ONE chapter in focus while the
+ * others dim - big scroll margins between chapters make the focus obvious.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import { Badge } from '@unkn0wndo3s/nova-design-system';
+import { Code } from 'astro:components';
+import { breadcrumbLd } from '../lib/seo';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+
+import configRaw from '../../astro.config.mjs?raw';
+import smoothRaw from '../lib/smooth.ts?raw';
+import scrubRaw from '../lib/scrub.ts?raw';
+import voyageRaw from '../components/scene/voyage.ts?raw';
+import homeRaw from '../views/HomeView.astro?raw';
+import infraRaw from '../components/scenes/InfraScene.astro?raw';
+import sorterRaw from '../components/scenes/SorterScene.astro?raw';
+import enHomeRaw from '../pages/en/index.astro?raw';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const L = (fr: string, en: string) => (locale === 'fr' ? fr : en);
+
+/** Slice a source between two unique markers - fails the build if missing. */
+function slice(src: string, from: string, to: string, label: string): string {
+  const a = src.indexOf(from);
+  if (a === -1) throw new Error(`docs: marker "${from}" not found (${label})`);
+  const b = src.indexOf(to, a + from.length);
+  if (b === -1) throw new Error(`docs: marker "${to}" not found (${label})`);
+  return src.slice(a, b).replace(/\s+$/, '');
+}
+
+const snips = {
+  smooth: smoothRaw.trimEnd(),
+  scrub: scrubRaw.trimEnd(),
+  segments: slice(voyageRaw, '  // --- Timeline from the DOM', '  // --- Scene ---', 'segments'),
+  camera: slice(voyageRaw, '  // Flight path:', '  // Starfield', 'camera path'),
+  camTick: slice(voyageRaw, '    // Camera along the path.', '    // Nebulae drift.', 'camera tick'),
+  overlay: slice(voyageRaw, '  const applyOverlay', '  // --- Frame loop', 'overlay'),
+  cinemaCss: slice(homeRaw, '  /* Cinema: fixed overlays', '  /* ------------------------------- Cards', 'cinema css'),
+  energy: slice(voyageRaw, '    // Scroll → timeline progress', '    // Camera along the path.', 'energy'),
+  collisions: slice(voyageRaw, '    // Collisions only while agitated', '    belt.instanceMatrix', 'collisions'),
+  seek: slice(voyageRaw, '  const seek = (id: string', '  dots.forEach', 'seek'),
+  gate: slice(voyageRaw, '  // --- Capability gate', '  // --- Timeline from the DOM', 'gate'),
+  infraDash: slice(infraRaw, '  .edge {', '  .node {', 'infra dash'),
+  sorterMeasure: slice(sorterRaw, '    const measure = () => {', '    let lastP = 0;', 'sorter measure'),
+  sorterRng: slice(sorterRaw, '  /** Deterministic PRNG', '  function init()', 'sorter rng'),
+  configI18n: slice(configRaw, '  i18n: {', '  integrations', 'config i18n'),
+  configVite: slice(configRaw, '  vite: {', '});', 'vite'),
+  enRoute: enHomeRaw.trimEnd(),
+};
+
+const chapters = [
+  { id: 'une-valeur', num: '01', title: L('Une seule valeur pilote tout', 'One value drives everything') },
+  { id: 'lenis', num: '02', title: L('Le lissage', 'The smoothing') },
+  { id: 'epingler', num: '03', title: L('Épingler une scène', 'Pinning a scene') },
+  { id: 'camera', num: '04', title: L('Une caméra sur des rails', 'A camera on rails') },
+  { id: 'overlays', num: '05', title: L('Des sections qui ne défilent pas', 'Sections that never scroll') },
+  { id: 'velocite', num: '06', title: L('Le scroll a une vitesse', 'Scroll has a velocity') },
+  { id: 'dessiner', num: '07', title: L('Dessiner au scroll', 'Drawing with scroll') },
+  { id: 'ranger', num: '08', title: L('Ranger des fichiers', 'Sorting files') },
+  { id: 'reste', num: '09', title: L('Le reste, en bref', 'The rest, briefly') },
+  { id: 'refaire', num: '10', title: L('Refaites-le', 'Rebuild it') },
+];
+
+const crumbs = [
+  { name: t('nav.home'), url: localizePath('/', locale) },
+  { name: 'Docs', url: localizePath('/docs', locale) },
+];
+const THEME = 'github-dark-default';
+
+// Mini sorter demo data (chapter 08)
+const miniFiles = [
+  { name: 'photo.jpg', cat: 'img' },
+  { name: 'logo.png', cat: 'img' },
+  { name: 'scan.webp', cat: 'img' },
+  { name: 'main.rs', cat: 'code' },
+  { name: 'lib.rs', cat: 'code' },
+  { name: 'Cargo.toml', cat: 'code' },
+];
+---
+
+<BaseLayout title={t('meta.docs.title')} description={t('meta.docs.description')} jsonLd={[breadcrumbLd(crumbs)]} ogType="article">
+  <header class="hero">
+    <Eyebrow>{t('docs.eyebrow')}</Eyebrow>
+    <h1>{t('docs.title')}</h1>
+    <p class="lead">{t('docs.lead')}</p>
+    <p class="meta-chips">
+      <Badge type="primary" variant="soft">Three.js</Badge>
+      <Badge type="primary" variant="soft">Lenis</Badge>
+      <Badge type="primary" variant="soft">Astro 7</Badge>
+      <Badge type="primary" variant="soft">NDS v1.2.1</Badge>
+      <span class="reading">{t('docs.reading')}</span>
+    </p>
+  </header>
+
+  <div class="doc" data-doc>
+    <nav class="toc" aria-label={t('docs.toc')}>
+      <p class="toc__label">{t('docs.toc')}</p>
+      <ol>
+        {chapters.map((c) => (
+          <li><a href={`#${c.id}`} data-toc={c.id}><span>{c.num}</span>{c.title}</a></li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="chapters">
+      <!-- ============================ 01 ================================ -->
+      <section class="ch" id="une-valeur">
+        <header><span class="ch-num">01</span><h2>{chapters[0]!.title}</h2></header>
+        <p>{L(
+          "Quand j'ai décidé de refaire ce portfolio, je suis parti d'une frustration : sur la plupart des sites, on sent le scroll. La page glisse, le contenu monte, et l'illusion se casse. Ce que je voulais, c'est que scroller ne fasse jamais défiler quoi que ce soit - juste avancer une animation.",
+          "When I decided to rebuild this portfolio, I started from a frustration: on most sites, you can feel the scroll. The page slides, the content moves up, and the illusion breaks. What I wanted was for scrolling to never scroll anything - just move an animation forward.",
+        )}</p>
+        <p>{L(
+          "La solution tient en une phrase : je convertis la position de scroll en un nombre entre 0 et 1, et ce nombre pilote absolument tout. La caméra 3D, l'apparition des sections, la barre de progression, la physique des astéroïdes. Une seule source de vérité, lue une fois par frame. Le voilà, ce nombre, en direct :",
+          "The whole solution fits in one sentence: I convert the scroll position into a number between 0 and 1, and that number drives absolutely everything. The 3D camera, the sections fading in, the progress bar, the asteroid physics. One source of truth, read once per frame. Here it is, live:",
+        )}</p>
+
+        <figure class="demo" data-demo-progress>
+          <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{L('la progression de CETTE page', 'THIS page’s progress')}</span></figcaption>
+          <div class="demo__body demo-progress">
+            <p class="big-num"><span data-p-val>0.000</span></p>
+            <div class="p-track"><div class="p-fill" data-p-fill></div></div>
+            <p class="demo-note">{L('progress = scroll ÷ (hauteur totale − hauteur de fenêtre)', 'progress = scroll ÷ (total height − viewport height)')}</p>
+          </div>
+        </figure>
+
+        <Code code={`const progress = scrollY / (document.documentElement.scrollHeight - innerHeight);\n// 0 en haut, 1 en bas. C'est tout. Vraiment.`} lang="ts" theme={THEME} />
+      </section>
+
+      <!-- ============================ 02 ================================ -->
+      <section class="ch" id="lenis">
+        <header><span class="ch-num">02</span><h2>{chapters[1]!.title}</h2></header>
+        <p>{L(
+          "Un scroll natif avance par crans - chaque coup de molette est un saut de ~100px. Si la caméra suit ça au pixel près, elle saute aussi, et adieu le cinéma. C'est là que Lenis entre en jeu : il intercepte la molette et fait glisser la vraie position de scroll vers la cible avec une interpolation.",
+          "Native scrolling moves in steps - every wheel notch is a ~100px jump. If the camera follows that pixel-for-pixel, it jumps too, and there goes the cinematic feel. That's where Lenis comes in: it intercepts the wheel and eases the real scroll position toward the target with an interpolation.",
+        )}</p>
+        <p>{L(
+          "Le principe de l'interpolation (lerp), c'est trois mots de code : à chaque frame, on parcourt 9% du chemin restant vers la cible. Regardez la différence - le point du haut suit la valeur brute, celui du bas la version lissée :",
+          "The interpolation (lerp) principle is three words of code: each frame, travel 9% of the remaining distance to the target. Watch the difference - the top dot follows the raw value, the bottom one the smoothed version:",
+        )}</p>
+
+        <figure class="demo demo--pin" data-demo-lerp>
+          <div class="demo__stage">
+            <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{t('docs.tryIt')}</span></figcaption>
+            <div class="demo__body demo-lerp">
+              <div class="lane"><span class="lane__label">{L('brut', 'raw')}</span><div class="lane__track"><i class="dot dot--raw" data-dot-raw></i></div></div>
+              <div class="lane"><span class="lane__label">lerp 0.09</span><div class="lane__track"><i class="dot dot--smooth" data-dot-smooth></i></div></div>
+              <p class="demo-note"><code>pos += (target − pos) × 0.09</code> — {L('chaque frame', 'every frame')}</p>
+            </div>
+          </div>
+        </figure>
+
+        <p>{L(
+          "Le bonus qui change tout : comme Lenis lisse la position de scroll elle-même, tout ce qui la lit hérite de la même inertie. Je n'ai pas dix easings à synchroniser - j'en ai un. Le fichier complet, singleton compris (il est partagé par toutes les pages) :",
+          "The bonus that changes everything: since Lenis smooths the scroll position itself, anything that reads it inherits the same inertia. I don't have ten easings to keep in sync - I have one. The complete file, singleton included (it's shared by every page):",
+        )}</p>
+        <p class="file">src/lib/smooth.ts</p>
+        <Code code={snips.smooth} lang="ts" theme={THEME} />
+        <div class="callout callout--trap">
+          <p class="callout__title">{t('docs.trap')}</p>
+          <p>{L(
+            "Enlevez scroll-behavior: smooth de votre CSS quand Lenis est actif, sinon les deux lissages s'empilent et le scroll devient un bateau ivre.",
+            'Remove scroll-behavior: smooth from your CSS when Lenis is active, otherwise the two smoothings stack and scrolling turns into a drunken boat.',
+          )}</p>
+        </div>
+      </section>
+
+      <!-- ============================ 03 ================================ -->
+      <section class="ch" id="epingler">
+        <header><span class="ch-num">03</span><h2>{chapters[2]!.title}</h2></header>
+        <p>{L(
+          "Confession : j'ai commencé avec GSAP ScrollTrigger, comme tout le monde. Je l'ai désinstallé au bout d'une heure. Pas parce qu'il est mauvais - parce que je n'avais besoin que d'une chose : savoir où j'en suis dans la traversée d'une section. Et ça, le navigateur le donne gratuitement.",
+          "Confession: I started with GSAP ScrollTrigger, like everyone. I uninstalled it an hour later. Not because it's bad - because I only needed one thing: knowing how far I am through a section. And the browser gives that away for free.",
+        )}</p>
+        <p>{L(
+          "La recette : une section très haute (disons 280vh), et dedans, un étage en position: sticky de 100vh. Pendant qu'on traverse la section, l'étage reste collé à l'écran. La progression de la traversée, c'est juste de la géométrie sur getBoundingClientRect(). Cette démo est elle-même épinglée - vous êtes en train de la traverser :",
+          "The recipe: a very tall section (say 280vh) with a 100vh position: sticky stage inside. While you traverse the section, the stage stays glued to the screen. The traversal progress is just geometry on getBoundingClientRect(). This demo is itself pinned - you are traversing it right now:",
+        )}</p>
+
+        <figure class="demo demo--pin demo--tall" data-demo-scrub>
+          <div class="demo__stage">
+            <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{L('cette boîte est sticky, la section derrière fait 220vh', 'this box is sticky, the section behind is 220vh tall')}</span></figcaption>
+            <div class="demo__body demo-scrub">
+              <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+                <circle cx="60" cy="60" r="52" class="ring__bg" />
+                <circle cx="60" cy="60" r="52" class="ring__fg" pathLength="1" data-ring />
+              </svg>
+              <p class="big-num">p = <span data-scrub-val>0.00</span></p>
+              <div class="mini-diagram" aria-hidden="true">
+                <div class="md-section"><div class="md-stage" data-md-stage><span>sticky</span></div></div>
+                <span class="md-label">280vh</span>
+              </div>
+            </div>
+          </div>
+        </figure>
+
+        <p>{L('Le helper complet fait 30 lignes, et les quatre scènes projet tournent dessus :', 'The complete helper is 30 lines, and all four project scenes run on it:')}</p>
+        <p class="file">src/lib/scrub.ts</p>
+        <Code code={snips.scrub} lang="ts" theme={THEME} />
+        <div class="callout callout--why">
+          <p class="callout__title">{t('docs.why')}</p>
+          <p>{L(
+            "getBoundingClientRect() reste juste avec Lenis parce que Lenis fait défiler la vraie fenêtre, pas un wrapper en transform. Beaucoup de libs de smooth scroll cassent cette propriété - c'est LE critère qui m'a fait choisir Lenis.",
+            "getBoundingClientRect() stays accurate with Lenis because Lenis scrolls the real window, not a transformed wrapper. Many smooth-scroll libs break that property - it's THE criterion that made me pick Lenis.",
+          )}</p>
+        </div>
+      </section>
+
+      <!-- ============================ 04 ================================ -->
+      <section class="ch" id="camera">
+        <header><span class="ch-num">04</span><h2>{chapters[3]!.title}</h2></header>
+        <p>{L(
+          "Sur l'accueil, le progress ne remplit pas une jauge : il place une caméra sur une courbe. Je pose un point de contrôle par section, en zigzag doux, et une Catmull-Rom fait passer une courbe lisse par tous. À chaque frame : position = courbe(p), regard = courbe(p + 0.045) - viser un peu devant soi suffit à donner une trajectoire naturelle, comme des phares dans un virage.",
+          "On the home page, progress doesn't fill a gauge: it places a camera on a curve. I drop one control point per section, gently zigzagging, and a Catmull-Rom threads a smooth curve through them all. Each frame: position = curve(p), gaze = curve(p + 0.045) - aiming slightly ahead of yourself is enough for a natural trajectory, like headlights in a bend.",
+        )}</p>
+
+        <figure class="demo demo--pin demo--tall" data-demo-curve>
+          <div class="demo__stage">
+            <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{L('la même mécanique, vue de dessus', 'the same mechanic, seen from above')}</span></figcaption>
+            <div class="demo__body">
+              <svg viewBox="0 0 600 260" class="curve" role="img" aria-label={chapters[3]!.title}>
+                <path class="curve__path" data-curve-path d="M 30 210 C 120 40, 210 40, 300 130 S 470 230, 570 60" pathLength="1" />
+                <circle class="beacon" data-beacon="0.28" r="7" />
+                <circle class="beacon" data-beacon="0.55" r="7" />
+                <circle class="beacon" data-beacon="0.82" r="7" />
+                <line class="gaze" data-gaze x1="0" y1="0" x2="0" y2="0" />
+                <circle class="cam" data-cam r="6" />
+                <circle class="look" data-look r="3.5" />
+              </svg>
+              <p class="demo-note">{L('point plein = caméra · petit point = cible du regard, à p + 0.045 · les balises s’allument à l’approche', 'solid dot = camera · small dot = gaze target, at p + 0.045 · beacons light up on approach')}</p>
+            </div>
+          </div>
+        </figure>
+
+        <p>{L(
+          "Détail que j'aime bien : la timeline n'est pas codée en dur, elle est lue dans le DOM. Chaque section porte data-seg et un data-weight (sa durée relative) - pour rallonger l'étape « projets », je change un attribut HTML, pas le moteur :",
+          "A detail I'm fond of: the timeline isn't hard-coded, it's read from the DOM. Each section carries data-seg and a data-weight (its relative duration) - to make the “projects” leg longer, I change an HTML attribute, not the engine:",
+        )}</p>
+        <p class="file">src/components/scene/voyage.ts</p>
+        <Code code={snips.segments} lang="ts" theme={THEME} />
+        <Code code={snips.camera} lang="ts" theme={THEME} />
+        <Code code={snips.camTick} lang="ts" theme={THEME} />
+      </section>
+
+      <!-- ============================ 05 ================================ -->
+      <section class="ch" id="overlays">
+        <header><span class="ch-num">05</span><h2>{chapters[4]!.title}</h2></header>
+        <p>{L(
+          "Reste le texte. Si les sections restaient dans le flux, on les verrait défiler - retour à la case départ. Alors en mode cinéma elles passent toutes en position: fixed, empilées au même endroit, et c'est le progress qui décide laquelle existe : chacune a une fenêtre [début, fin] sur la timeline, avec un fondu d'entrée et de sortie en smoothstep.",
+          "That leaves the text. If the sections stayed in the flow, you'd see them scroll by - back to square one. So in cinema mode they all become position: fixed, stacked in the same spot, and progress decides which one exists: each has a [start, end] window on the timeline, with smoothstep fade-in and fade-out.",
+        )}</p>
+
+        <figure class="demo demo--pin demo--tall" data-demo-overlay>
+          <div class="demo__stage">
+            <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{L('trois fenêtres, un seul écran', 'three windows, one screen')}</span></figcaption>
+            <div class="demo__body demo-overlay">
+              <div class="screen">
+                <div class="panel" data-panel="0"><h4>{L('Section A', 'Section A')}</h4><p>{L('fenêtre 0.00 → 0.40', 'window 0.00 → 0.40')}</p></div>
+                <div class="panel" data-panel="1"><h4>{L('Section B', 'Section B')}</h4><p>{L('fenêtre 0.30 → 0.70', 'window 0.30 → 0.70')}</p></div>
+                <div class="panel" data-panel="2"><h4>{L('Section C', 'Section C')}</h4><p>{L('fenêtre 0.60 → 1.00', 'window 0.60 → 1.00')}</p></div>
+              </div>
+              <div class="timeline" aria-hidden="true">
+                <div class="tl-bar" style="left:0%;width:40%"></div>
+                <div class="tl-bar" style="left:30%;width:40%"></div>
+                <div class="tl-bar" style="left:60%;width:40%"></div>
+                <div class="tl-head" data-tl-head></div>
+              </div>
+            </div>
+          </div>
+        </figure>
+
+        <p>{L(
+          "Pas de transitions CSS, pas de lib d'animation : opacité et transform sont recalculés chaque frame depuis p. Et le point crucial pour l'accessibilité et le SEO : ce CSS n'existe qu'en mode cinéma. Sans JS, sans WebGL ou avec prefers-reduced-motion, les mêmes sections s'empilent en page normale.",
+          "No CSS transitions, no animation lib: opacity and transform are recomputed every frame from p. And the crucial bit for accessibility and SEO: that CSS only exists in cinema mode. Without JS, without WebGL or with prefers-reduced-motion, the same sections stack into a normal page.",
+        )}</p>
+        <Code code={snips.overlay} lang="ts" theme={THEME} />
+        <p class="file">src/views/HomeView.astro (style)</p>
+        <Code code={snips.cinemaCss} lang="scss" theme={THEME} />
+      </section>
+
+      <!-- ============================ 06 ================================ -->
+      <section class="ch" id="velocite">
+        <header><span class="ch-num">06</span><h2>{chapters[5]!.title}</h2></header>
+        <p>{L(
+          "La position ne dit pas tout : Lenis expose aussi la vélocité, signée. Je la lisse en deux « énergies » - une pour la descente, une pour la remontée - et je les branche sur la physique de la ceinture d'astéroïdes. Descendre agite les rochers jusqu'à la collision (rebond élastique + étincelles) ; remonter les aspire dans un vortex qui les ramène en formation.",
+          "Position isn't the whole story: Lenis also exposes the velocity, signed. I smooth it into two “energies” - one for scrolling down, one for up - and wire them into the asteroid belt physics. Scrolling down agitates the rocks into collisions (elastic bounce + sparks); scrolling up sucks them into a vortex that brings them back into formation.",
+        )}</p>
+
+        <figure class="demo" data-demo-velocity>
+          <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{L('scrollez vite vers le bas, puis remontez - n’importe où sur la page', 'scroll down fast, then back up - anywhere on the page')}</span></figcaption>
+          <div class="demo__body">
+            <canvas class="velo" data-velo height="240" aria-hidden="true"></canvas>
+            <p class="demo-note">v = <span data-velo-val>0</span> px/frame → {L('énergie descente', 'down energy')} <span data-velo-down>0.00</span> · {L('énergie remontée', 'up energy')} <span data-velo-up>0.00</span></p>
+          </div>
+        </figure>
+
+        <p>{L('Le vrai code du moteur - le lissage des énergies, puis la boucle de collisions (limitée aux rochers proches de la caméra, sinon le O(n²) pique) :', 'The real engine code - the energy smoothing, then the collision loop (limited to rocks near the camera, otherwise the O(n²) bites):')}</p>
+        <p class="file">src/components/scene/voyage.ts</p>
+        <Code code={snips.energy} lang="ts" theme={THEME} />
+        <Code code={snips.collisions} lang="ts" theme={THEME} />
+      </section>
+
+      <!-- ============================ 07 ================================ -->
+      <section class="ch" id="dessiner">
+        <header><span class="ch-num">07</span><h2>{chapters[6]!.title}</h2></header>
+        <p>{L(
+          "Mon attribut SVG préféré : pathLength=\"1\". Il déclare que le chemin mesure 1, peu importe sa vraie longueur. Du coup stroke-dasharray: 1 + un stroke-dashoffset qui va de 1 à 0, et n'importe quel tracé se dessine - pas de getTotalLength(), pas de calcul, le même CSS pour tous les chemins. C'est ce qui anime le schéma réseau de nova-infra et le blueprint du portfolio.",
+          'My favorite SVG attribute: pathLength="1". It declares the path is 1 unit long, whatever its real length. So stroke-dasharray: 1 + a stroke-dashoffset going from 1 to 0, and any path draws itself - no getTotalLength(), no math, the same CSS for every path. That is what animates the nova-infra network diagram and the portfolio blueprint.',
+        )}</p>
+
+        <figure class="demo demo--pin" data-demo-draw>
+          <div class="demo__stage">
+            <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{t('docs.tryIt')}</span></figcaption>
+            <div class="demo__body">
+              <svg viewBox="0 0 600 200" class="drawing" aria-hidden="true">
+                <path data-draw-path pathLength="1" d="M 40 160 C 100 40, 170 40, 230 120 S 340 190, 400 90 S 520 30, 560 110" />
+                <path data-draw-path pathLength="1" d="M 480 60 l 30 -22 l 6 36 z" />
+              </svg>
+              <p class="demo-note"><code>stroke-dashoffset: <span data-draw-val>1.00</span></code></p>
+            </div>
+          </div>
+        </figure>
+
+        <p class="file">src/components/scenes/InfraScene.astro (style)</p>
+        <Code code={snips.infraDash} lang="scss" theme={THEME} />
+      </section>
+
+      <!-- ============================ 08 ================================ -->
+      <section class="ch" id="ranger">
+        <header><span class="ch-num">08</span><h2>{chapters[7]!.title}</h2></header>
+        <p>{L(
+          "La scène de file-organizer, c'est un FLIP à l'envers. Je laisse d'abord la grille CSS ranger les puces (l'état FINAL), je mesure ces positions, je fige la hauteur du plateau, et seulement là je les passe en absolu sur des positions éparpillées. Le scroll interpole ensuite chaque puce vers sa place. Le chaos vient d'un PRNG seedé : même bazar à chaque visite, ce qui est plus honnête qu'un Math.random() qui changerait dans votre dos.",
+          "The file-organizer scene is FLIP in reverse. I first let the CSS grid lay the chips out (the FINAL state), measure those positions, freeze the board height, and only then absolutize them onto scattered positions. Scroll then interpolates each chip to its slot. The chaos comes from a seeded PRNG: same mess on every visit, which is more honest than a Math.random() shifting behind your back.",
+        )}</p>
+
+        <figure class="demo demo--pin" data-demo-sort>
+          <div class="demo__stage">
+            <figcaption><Badge type="success" variant="soft">{t('docs.live')}</Badge><span>{t('docs.tryIt')}</span></figcaption>
+            <div class="demo__body">
+              <div class="mini-board" data-mini-board>
+                <div class="mini-col"><p>Images</p>{miniFiles.filter((f) => f.cat === 'img').map((f) => <span class="mini-chip" data-mini-chip data-cat={f.cat}><i></i>{f.name}</span>)}</div>
+                <div class="mini-col"><p>Code</p>{miniFiles.filter((f) => f.cat === 'code').map((f) => <span class="mini-chip" data-mini-chip data-cat={f.cat}><i></i>{f.name}</span>)}</div>
+              </div>
+            </div>
+          </div>
+        </figure>
+
+        <p>{L(
+          "Petit aveu : mon premier bug ici, c'était le resize - je re-mesurais les cibles sans libérer la hauteur figée du plateau. Les puces visaient des positions d'un layout qui n'existait plus. D'où le board.style.height = '' en première ligne de measure() :",
+          "Small confession: my first bug here was resize - I re-measured the targets without releasing the board's frozen height. The chips were aiming at positions from a layout that no longer existed. Hence the board.style.height = '' on the first line of measure():",
+        )}</p>
+        <p class="file">src/components/scenes/SorterScene.astro</p>
+        <Code code={snips.sorterRng} lang="ts" theme={THEME} />
+        <Code code={snips.sorterMeasure} lang="ts" theme={THEME} />
+      </section>
+
+      <!-- ============================ 09 ================================ -->
+      <section class="ch" id="reste">
+        <header><span class="ch-num">09</span><h2>{chapters[8]!.title}</h2></header>
+        <p>{L(
+          "Le reste du site est volontairement classique, et c'est ce qui permet à l'animation d'exister. Trois portes s'ouvrent avant le mode cinéma - reduced-motion, création du renderer WebGL, et seulement ensuite la classe html.cinema. Si une seule reste fermée, vous avez une page statique complète, avec exactement le même contenu. Côté budget : DPR plafonné à 2, moitié moins de particules sur mobile, boucle en pause quand l'onglet est caché, et Three.js (528 Ko quand même) en import dynamique - il ne se télécharge que si le voyage va vraiment démarrer.",
+          "The rest of the site is deliberately boring, and that's what lets the animation exist. Three gates open before cinema mode - reduced-motion, WebGL renderer creation, and only then the html.cinema class. If a single one stays shut, you get a complete static page with exactly the same content. Budget-wise: DPR capped at 2, half the particles on mobile, loop paused when the tab is hidden, and Three.js (a hefty 528 KB) behind a dynamic import - it only downloads if the voyage is actually going to start.",
+        )}</p>
+        <p class="file">src/components/scene/voyage.ts</p>
+        <Code code={snips.gate} lang="ts" theme={THEME} />
+        <p>{L(
+          "Bilingue : le français vit à la racine, l'anglais sous /en/, et chaque route anglaise fait quatre lignes parce que toute la logique est dans des vues partagées. Les dictionnaires sont typés - une clé oubliée en anglais, et le build refuse.",
+          "Bilingual: French lives at the root, English under /en/, and every English route is four lines because all the logic sits in shared views. Dictionaries are typed - forget a key in English and the build refuses.",
+        )}</p>
+        <p class="file">astro.config.mjs</p>
+        <Code code={snips.configI18n} lang="js" theme={THEME} />
+        <p class="file">src/pages/en/index.astro</p>
+        <Code code={snips.enRoute} lang="astro" theme={THEME} />
+        <p>{L(
+          "Le design system fournit les tokens (var(--nds-…)) et les mixins typo Sass, branchés via un loadPath - le site n'écrit jamais une couleur en dur, y compris dans les scènes 3D. Déploiement : astro build sort un dist/ statique, un runner Gitea Actions sur mon VPS OVH le build et le publie derrière Apache et Cloudflare.",
+          "The design system provides the tokens (var(--nds-…)) and the Sass type mixins, wired through a loadPath - the site never hard-codes a color, 3D scenes included. Deployment: astro build outputs a static dist/, a Gitea Actions runner on my OVH VPS builds and publishes it behind Apache and Cloudflare.",
+        )}</p>
+        <p class="file">astro.config.mjs</p>
+        <Code code={snips.configVite} lang="js" theme={THEME} />
+      </section>
+
+      <!-- ============================ 10 ================================ -->
+      <section class="ch" id="refaire">
+        <header><span class="ch-num">10</span><h2>{chapters[9]!.title}</h2></header>
+        <p>{L(
+          "Si je devais tout refaire demain, voilà l'ordre - c'est presque celui que j'ai suivi, en enlevant les détours :",
+          "If I had to redo it all tomorrow, here's the order - it's almost the one I followed, minus the detours:",
+        )}</p>
+        <ol class="steps">
+          <li>{L("La page statique d'abord. Toutes les sections, empilées, finies, belles. C'est votre fallback, votre SEO, et votre filet de sécurité pour la suite.", 'The static page first. All sections, stacked, finished, good-looking. That is your fallback, your SEO, and your safety net for what follows.')}</li>
+          <li>{L('Lenis en singleton (chapitre 02). Copiez smooth.ts, il est fait pour ça.', 'Lenis as a singleton (chapter 02). Copy smooth.ts, that is what it is for.')}</li>
+          <li>{L('Le nombre magique : affichez le progress de la page dans un coin (chapitre 01). Tant que ce nombre ne bouge pas proprement, rien ne bougera proprement.', 'The magic number: display the page progress in a corner (chapter 01). Until that number moves cleanly, nothing will.')}</li>
+          <li>{L("La caméra (chapitre 04) : les points de contrôle, la Catmull-Rom, position = courbe(p). Regardez-la voler dans le vide avant d'ajouter quoi que ce soit.", 'The camera (chapter 04): control points, the Catmull-Rom, position = curve(p). Watch it fly through the void before adding anything.')}</li>
+          <li>{L('Les overlays (chapitre 05) : passez les sections en fixed derrière une classe html.cinema, jamais par défaut.', 'The overlays (chapter 05): switch the sections to fixed behind an html.cinema class, never by default.')}</li>
+          <li>{L("La matière : étoiles, nébuleuses, ceinture. Puis la vélocité (chapitre 06) - c'est elle qui rend le scroll vivant.", 'The matter: stars, nebulae, belt. Then the velocity (chapter 06) - that is what makes the scroll feel alive.')}</li>
+          <li>{L('scrub.ts (chapitre 03) et une scène épinglée par projet. Le fallback statique se code EN MÊME TEMPS que la scène, pas après.', 'scrub.ts (chapter 03) and one pinned scene per project. The static fallback is written AT THE SAME TIME as the scene, not after.')}</li>
+          <li>{L('SEO, i18n, CI (chapitre 09). Ennuyeux, indispensable.', 'SEO, i18n, CI (chapter 09). Boring, indispensable.')}</li>
+          <li>{L("Testez sur un vrai trackpad, un vrai téléphone, et ajustez les data-weight. Les miens ont bougé cinq fois.", 'Test on a real trackpad, a real phone, and tune the data-weight values. Mine changed five times.')}</li>
+        </ol>
+        <p>{L(
+          "Et si un truc reste flou : tout le code est sur mon Gitea, et chaque snippet de cette page en est extrait au build - ce que vous lisez ici est forcément à jour.",
+          "And if anything is still unclear: all the code is on my Gitea, and every snippet on this page is extracted from it at build time - what you read here is up to date by construction.",
+        )}</p>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { scrub, clamp01, window01 } from '../lib/scrub';
+  import { getSmooth } from '../lib/smooth';
+
+  const doc = document.querySelector<HTMLElement>('[data-doc]');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Focus mode: one chapter sharp, the rest dimmed --------------------
+  const links = new Map(
+    Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-toc]')).map((a) => [a.dataset.toc!, a]),
+  );
+  const chapters = Array.from(document.querySelectorAll<HTMLElement>('.ch'));
+  const obs = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        chapters.forEach((c) => c.classList.toggle('is-focus', c === e.target));
+        links.forEach((a) => a.classList.remove('is-active'));
+        links.get(e.target.id)?.classList.add('is-active');
+      }
+    },
+    { rootMargin: '-35% 0px -35% 0px' },
+  );
+  chapters.forEach((c) => obs.observe(c));
+  if (!reduced) doc?.classList.add('focus-on');
+
+  // ---- Demos (all skipped under reduced motion) ---------------------------
+  if (!reduced && doc) {
+    doc.classList.add('is-live');
+    const $ = <T extends HTMLElement | SVGElement>(sel: string) => document.querySelector<T>(sel);
+
+    // 01 · live page progress
+    {
+      const val = $('[data-p-val]');
+      const fill = $<HTMLElement>('[data-p-fill]');
+      const loop = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const p = clamp01((getSmooth()?.scroll ?? window.scrollY) / Math.max(1, max));
+        if (val) val.textContent = p.toFixed(3);
+        if (fill) fill.style.transform = `scaleX(${p})`;
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+
+    // 02 · raw vs lerp
+    {
+      const root = $<HTMLElement>('[data-demo-lerp]');
+      const raw = $<HTMLElement>('[data-dot-raw]');
+      const smooth = $<HTMLElement>('[data-dot-smooth]');
+      if (root && raw && smooth) {
+        root.classList.add('is-ready');
+        let target = 0;
+        let pos = 0;
+        scrub(root, (p) => (target = p));
+        const loop = () => {
+          pos += (target - pos) * 0.09;
+          raw.style.left = `${(target * 100).toFixed(2)}%`;
+          smooth.style.left = `${(pos * 100).toFixed(2)}%`;
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+    }
+
+    // 03 · scrub meter
+    {
+      const root = $<HTMLElement>('[data-demo-scrub]');
+      const ring = $<SVGCircleElement>('[data-ring]');
+      const val = $('[data-scrub-val]');
+      const stage = $<HTMLElement>('[data-md-stage]');
+      if (root && ring && val && stage) {
+        root.classList.add('is-ready');
+        scrub(root, (p) => {
+          ring.style.strokeDashoffset = String(1 - p);
+          val.textContent = p.toFixed(2);
+          stage.style.top = `${(p * 62).toFixed(1)}%`;
+        });
+      }
+    }
+
+    // 04 · camera on a curve
+    {
+      const root = $<HTMLElement>('[data-demo-curve]');
+      const path = $<SVGPathElement>('[data-curve-path]');
+      const cam = $<SVGCircleElement>('[data-cam]');
+      const look = $<SVGCircleElement>('[data-look]');
+      const gaze = $<SVGLineElement>('[data-gaze]');
+      const beacons = Array.from(document.querySelectorAll<SVGCircleElement>('[data-beacon]'));
+      if (root && path && cam && look && gaze) {
+        root.classList.add('is-ready');
+        const len = path.getTotalLength();
+        beacons.forEach((b) => {
+          const pt = path.getPointAtLength(Number(b.dataset.beacon) * len);
+          b.setAttribute('cx', String(pt.x));
+          b.setAttribute('cy', String(pt.y));
+        });
+        scrub(root, (p) => {
+          const a = path.getPointAtLength(p * len);
+          const b = path.getPointAtLength(Math.min(1, p + 0.045) * len);
+          cam.setAttribute('cx', String(a.x));
+          cam.setAttribute('cy', String(a.y));
+          look.setAttribute('cx', String(b.x));
+          look.setAttribute('cy', String(b.y));
+          gaze.setAttribute('x1', String(a.x));
+          gaze.setAttribute('y1', String(a.y));
+          gaze.setAttribute('x2', String(b.x));
+          gaze.setAttribute('y2', String(b.y));
+          path.style.strokeDashoffset = String(1 - p);
+          beacons.forEach((bc) => {
+            const d = Math.abs(Number(bc.dataset.beacon) - p);
+            bc.style.opacity = String(0.3 + clamp01(1 - d * 6) * 0.7);
+            bc.style.transform = `scale(${1 + clamp01(1 - d * 6) * 0.6})`;
+          });
+        });
+      }
+    }
+
+    // 05 · overlay windows
+    {
+      const root = $<HTMLElement>('[data-demo-overlay]');
+      const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'));
+      const head = $<HTMLElement>('[data-tl-head]');
+      const windows: [number, number][] = [
+        [0, 0.4],
+        [0.3, 0.7],
+        [0.6, 1],
+      ];
+      if (root && panels.length && head) {
+        root.classList.add('is-ready');
+        scrub(root, (p) => {
+          panels.forEach((el, i) => {
+            const [a, b] = windows[i]!;
+            const local = clamp01((p - a) / (b - a));
+            const vis = Math.min(i === 0 ? 1 : window01(local, 0.05, 0.3), i === panels.length - 1 ? 1 : 1 - window01(local, 0.7, 0.95));
+            el.style.opacity = String(vis);
+            el.style.transform = `translateY(${((1 - vis) * 22).toFixed(1)}px)`;
+          });
+          head.style.left = `${(p * 100).toFixed(2)}%`;
+        });
+      }
+    }
+
+    // 06 · velocity particles (reads the real Lenis velocity)
+    {
+      const canvas = $<HTMLCanvasElement>('[data-velo]');
+      const vVal = $('[data-velo-val]');
+      const dVal = $('[data-velo-down]');
+      const uVal = $('[data-velo-up]');
+      const ctx = canvas?.getContext('2d');
+      if (canvas && ctx) {
+        canvas.closest('[data-demo-velocity]')?.classList.add('is-ready');
+        const css = getComputedStyle(document.documentElement);
+        const CYAN = css.getPropertyValue('--nds-primary').trim() || '#2efafa';
+        const N = 42;
+        interface P { bx: number; by: number; x: number; y: number; vx: number; vy: number }
+        let parts: P[] = [];
+        let W = 0;
+        let H = 0;
+        const size = () => {
+          W = canvas.clientWidth;
+          H = canvas.clientHeight;
+          canvas.width = W * devicePixelRatio;
+          canvas.height = H * devicePixelRatio;
+          ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+          parts = Array.from({ length: N }, (_, i) => {
+            const a = (i / N) * Math.PI * 2;
+            const r = Math.min(W, H) * 0.32;
+            const bx = W / 2 + Math.cos(a) * r;
+            const by = H / 2 + Math.sin(a) * r * 0.8;
+            return { bx, by, x: bx, y: by, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60 };
+          });
+        };
+        size();
+        window.addEventListener('resize', size);
+        let down = 0;
+        let up = 0;
+        let last = performance.now();
+        const loop = (now: number) => {
+          const dt = Math.min((now - last) / 1000, 0.05);
+          last = now;
+          const v = getSmooth()?.velocity ?? 0;
+          down += (clamp01(v / 55) - down) * 0.08;
+          up += (clamp01(-v / 55) - up) * 0.08;
+          if (vVal) vVal.textContent = v.toFixed(0);
+          if (dVal) dVal.textContent = down.toFixed(2);
+          if (uVal) uVal.textContent = up.toFixed(2);
+          ctx.clearRect(0, 0, W, H);
+          ctx.fillStyle = CYAN;
+          for (const p of parts) {
+            if (down > 0.04) {
+              p.x += p.vx * dt * down * 3;
+              p.y += p.vy * dt * down * 3;
+            }
+            if (up > 0.04) {
+              const dx = W / 2 - p.x;
+              const dy = H / 2 - p.y;
+              p.x += (-dy * 0.9 + dx * 0.7) * dt * up * 2.2;
+              p.y += (dx * 0.9 + dy * 0.7) * dt * up * 2.2;
+            }
+            if (down <= 0.04 && up <= 0.04) {
+              p.x += (p.bx - p.x) * dt * 1.6;
+              p.y += (p.by - p.y) * dt * 1.6;
+            }
+            // keep them on the board
+            p.x = Math.max(4, Math.min(W - 4, p.x));
+            p.y = Math.max(4, Math.min(H - 4, p.y));
+            ctx.globalAlpha = 0.85;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+    }
+
+    // 07 · pathLength draw
+    {
+      const root = $<HTMLElement>('[data-demo-draw]');
+      const paths = Array.from(document.querySelectorAll<SVGPathElement>('[data-draw-path]'));
+      const val = $('[data-draw-val]');
+      if (root && paths.length) {
+        root.classList.add('is-ready');
+        scrub(root, (p) => {
+          const off = 1 - window01(p, 0.05, 0.9);
+          paths.forEach((el, i) => {
+            el.style.strokeDashoffset = String(i === 0 ? off : 1 - window01(p, 0.55, 0.9));
+          });
+          if (val) val.textContent = off.toFixed(2);
+        });
+      }
+    }
+
+    // 08 · mini sorter (reversed FLIP, same recipe as the real scene)
+    {
+      const root = $<HTMLElement>('[data-demo-sort]');
+      const board = $<HTMLElement>('[data-mini-board]');
+      const chips = Array.from(document.querySelectorAll<HTMLElement>('[data-mini-chip]'));
+      if (root && board && chips.length) {
+        root.classList.add('is-ready');
+        const seeded = (i: number) => {
+          const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+          return x - Math.floor(x);
+        };
+        interface It { el: HTMLElement; tx: number; ty: number; sx: number; sy: number; rot: number }
+        let items: It[] = [];
+        const measure = () => {
+          root.classList.remove('is-sorting');
+          board.style.height = '';
+          chips.forEach((c) => c.removeAttribute('style'));
+          const b = board.getBoundingClientRect();
+          board.style.height = `${b.height}px`;
+          items = chips.map((el, i) => {
+            const r = el.getBoundingClientRect();
+            return {
+              el,
+              tx: r.left - b.left,
+              ty: r.top - b.top,
+              sx: seeded(i) * (b.width - r.width),
+              sy: seeded(i + 40) * (b.height - r.height),
+              rot: (seeded(i + 80) - 0.5) * 30,
+            };
+          });
+          root.classList.add('is-sorting');
+        };
+        measure();
+        let rt = 0;
+        window.addEventListener('resize', () => {
+          window.clearTimeout(rt);
+          rt = window.setTimeout(measure, 150);
+        });
+        scrub(root, (p) => {
+          for (let i = 0; i < items.length; i++) {
+            const it = items[i]!;
+            const e = window01(p, 0.1 + i * 0.07, 0.55 + i * 0.07);
+            const x = it.sx + (it.tx - it.sx) * e;
+            const y = it.sy + (it.ty - it.sy) * e - Math.sin(e * Math.PI) * 26;
+            it.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${(it.rot * (1 - e)).toFixed(1)}deg)`;
+          }
+        });
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .hero {
+    display: grid;
+    justify-items: start;
+    gap: var(--nds-spacing-md);
+    padding-block: clamp(56px, 10vh, 120px) clamp(32px, 6vh, 64px);
+
+    h1 {
+      @include type.text-5xl;
+      font-size: clamp(2.4rem, 7vw, 4.4rem);
+    }
+  }
+  .lead {
+    @include type.text-lg;
+    color: var(--nds-neutral);
+    max-width: 62ch;
+  }
+  .meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+  }
+  .reading {
+    @include type.text-sm;
+    color: var(--nds-disabled);
+    margin-left: var(--nds-spacing-sm);
+  }
+
+  .doc {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: clamp(24px, 5vw, 72px);
+    align-items: start;
+    padding-bottom: clamp(56px, 10vh, 120px);
+
+    @media (max-width: 960px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .toc {
+    position: sticky;
+    top: 88px;
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    padding: var(--nds-spacing-lg);
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    background: color-mix(in srgb, var(--nds-surface) 60%, transparent);
+
+    &__label {
+      @include type.text-label;
+      color: var(--nds-neutral);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    ol {
+      display: grid;
+      gap: 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    a {
+      @include type.text-sm;
+      display: flex;
+      gap: var(--nds-spacing-xs);
+      padding: 5px 8px;
+      border-left: 2px solid transparent;
+      border-radius: 0 var(--nds-radius-sm) var(--nds-radius-sm) 0;
+      color: var(--nds-neutral);
+      text-decoration: none;
+      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+      span {
+        font-family: var(--nds-font-mono);
+        color: var(--nds-disabled);
+        font-size: 0.72rem;
+        translate: 0 1px;
+      }
+      &:hover { color: var(--nds-text); }
+      &.is-active {
+        color: var(--nds-accent);
+        border-left-color: var(--nds-accent);
+        background: color-mix(in srgb, var(--nds-accent) 8%, transparent);
+
+        span { color: var(--nds-accent); }
+      }
+    }
+
+    @media (max-width: 960px) {
+      position: static;
+      order: -1;
+    }
+  }
+
+  /* Generous scroll margins between chapters: one thing in focus at a time. */
+  .chapters {
+    display: grid;
+    gap: clamp(28vh, 34vh, 42vh);
+    min-width: 0;
+    padding-block: 10vh 20vh;
+  }
+
+  .ch {
+    display: grid;
+    gap: var(--nds-spacing-md);
+    scroll-margin-top: 14vh;
+    transition: opacity 0.4s ease, filter 0.4s ease;
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: var(--nds-spacing-md);
+      border-bottom: 1px solid var(--nds-border);
+      padding-bottom: var(--nds-spacing-sm);
+      margin-bottom: var(--nds-spacing-xs);
+    }
+    .ch-num {
+      @include type.text-4xl;
+      font-family: var(--nds-font-mono);
+      color: color-mix(in srgb, var(--nds-accent) 45%, transparent);
+      font-variant-numeric: tabular-nums;
+    }
+    h2 {
+      @include type.text-3xl;
+    }
+    p {
+      @include type.text-base;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: var(--nds-neutral);
+      max-width: 72ch;
+    }
+  }
+
+  /* Focus mode: the active chapter is sharp, the neighbors recede. */
+  .focus-on .ch:not(.is-focus) {
+    opacity: 0.32;
+    filter: saturate(0.7);
+  }
+
+  /* -------------------------------- Demos --------------------------------- */
+  .demo {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    margin: var(--nds-spacing-sm) 0;
+
+    figcaption {
+      @include type.text-sm;
+      display: flex;
+      align-items: center;
+      gap: var(--nds-spacing-sm);
+      color: var(--nds-disabled);
+    }
+  }
+
+  .demo__body {
+    display: grid;
+    gap: var(--nds-spacing-md);
+    justify-items: center;
+    padding: clamp(var(--nds-spacing-lg), 3vw, var(--nds-spacing-2xl));
+    border: 1px solid color-mix(in srgb, var(--nds-primary) 30%, var(--nds-border));
+    border-radius: var(--nds-radius-lg);
+    background:
+      radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--nds-primary) 7%, transparent), transparent 60%),
+      color-mix(in srgb, var(--nds-surface) 55%, transparent);
+  }
+
+  /* Pinned demos: tall runway + sticky stage, only once JS confirms. */
+  .demo--pin.is-ready {
+    height: 170vh;
+
+    &.demo--tall { height: 220vh; }
+
+    .demo__stage {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      display: grid;
+      align-content: center;
+      gap: var(--nds-spacing-sm);
+    }
+  }
+
+  .demo-note {
+    @include type.text-sm;
+    color: var(--nds-disabled);
+    text-align: center;
+    max-width: none;
+
+    code { font-family: var(--nds-font-mono); color: var(--nds-primary); }
+    span { font-family: var(--nds-font-mono); color: var(--nds-accent); }
+  }
+
+  .big-num {
+    @include type.text-4xl;
+    font-family: var(--nds-font-mono);
+    color: var(--nds-text);
+    font-variant-numeric: tabular-nums;
+    max-width: none;
+
+    span { color: var(--nds-accent); }
+  }
+
+  /* 01 · progress */
+  .p-track {
+    width: min(460px, 100%);
+    height: 6px;
+    border-radius: 3px;
+    background: var(--nds-border);
+    overflow: hidden;
+  }
+  .p-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--nds-primary), var(--nds-accent));
+    transform-origin: left;
+    transform: scaleX(0);
+
+    .doc:not(.is-live) & { transform: scaleX(0.42); }
+  }
+
+  /* 02 · lerp */
+  .demo-lerp { width: 100%; }
+  .lane {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+    width: 100%;
+
+    &__label {
+      @include type.text-label;
+      color: var(--nds-neutral);
+      font-family: var(--nds-font-mono);
+    }
+    &__track {
+      position: relative;
+      height: 26px;
+      border: 1px dashed var(--nds-border);
+      border-radius: var(--nds-radius-full);
+    }
+  }
+  .dot {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    translate: -7px -50%;
+    background: var(--nds-neutral);
+
+    &--smooth { background: var(--nds-accent); box-shadow: 0 0 10px var(--nds-accent); }
+
+    .doc:not(.is-live) & { left: 42% !important; }
+  }
+
+  /* 03 · scrub meter */
+  .demo-scrub { justify-items: center; }
+  .ring {
+    width: 110px;
+    height: 110px;
+    transform: rotate(-90deg);
+
+    circle { fill: none; stroke-width: 7; }
+    &__bg { stroke: var(--nds-border); }
+    &__fg {
+      stroke: var(--nds-accent);
+      stroke-linecap: round;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+
+      .doc:not(.is-live) & { stroke-dashoffset: 0.58; }
+    }
+  }
+  .mini-diagram {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+
+    .md-section {
+      position: relative;
+      width: 54px;
+      height: 130px;
+      border: 1px dashed var(--nds-primary);
+      border-radius: var(--nds-radius-sm);
+    }
+    .md-stage {
+      position: absolute;
+      inset-inline: 4px;
+      top: 0;
+      height: 34%;
+      display: grid;
+      place-items: center;
+      border-radius: var(--nds-radius-sm);
+      background: color-mix(in srgb, var(--nds-accent) 22%, transparent);
+      border: 1px solid var(--nds-accent);
+
+      span {
+        font-family: var(--nds-font-mono);
+        font-size: 0.55rem;
+        color: var(--nds-accent);
+      }
+      .doc:not(.is-live) & { top: 33%; }
+    }
+    .md-label {
+      @include type.text-sm;
+      font-family: var(--nds-font-mono);
+      color: var(--nds-disabled);
+      writing-mode: vertical-rl;
+    }
+  }
+
+  /* 04 · curve */
+  .curve {
+    width: min(600px, 100%);
+    height: auto;
+    overflow: visible;
+
+    .curve__path {
+      fill: none;
+      stroke: var(--nds-primary);
+      stroke-width: 1.6;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+
+      .doc:not(.is-live) & { stroke-dashoffset: 0; }
+    }
+    .beacon {
+      fill: none;
+      stroke: var(--nds-accent);
+      stroke-width: 1.5;
+      opacity: 0.5;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .cam { fill: var(--nds-accent); filter: drop-shadow(0 0 6px var(--nds-accent)); }
+    .look { fill: var(--nds-text); }
+    .gaze { stroke: var(--nds-text); stroke-dasharray: 3 4; opacity: 0.6; }
+  }
+
+  /* 05 · overlays */
+  .demo-overlay { width: 100%; }
+  .screen {
+    position: relative;
+    width: min(480px, 100%);
+    height: 170px;
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-md);
+    background: color-mix(in srgb, var(--nds-background) 80%, transparent);
+    overflow: hidden;
+  }
+  .panel {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: 4px;
+    opacity: 0;
+
+    h4 {
+      @include type.text-2xl;
+      color: var(--nds-text);
+      font-family: var(--nds-font-mono);
+    }
+    p {
+      @include type.text-sm;
+      color: var(--nds-disabled);
+      font-family: var(--nds-font-mono);
+      max-width: none;
+    }
+    &[data-panel='0'] h4 { color: var(--nds-primary); }
+    &[data-panel='1'] h4 { color: var(--nds-accent); }
+    &[data-panel='2'] h4 { color: var(--nds-success-high); }
+
+    .doc:not(.is-live) &[data-panel='1'] { opacity: 1; }
+  }
+  .timeline {
+    position: relative;
+    width: min(480px, 100%);
+    height: 26px;
+
+    .tl-bar {
+      position: absolute;
+      top: 0;
+      height: 6px;
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--nds-primary) 35%, transparent);
+
+      &:nth-child(2) { top: 10px; background: color-mix(in srgb, var(--nds-accent) 35%, transparent); }
+      &:nth-child(3) { top: 20px; background: color-mix(in srgb, var(--nds-success-high) 35%, transparent); }
+    }
+    .tl-head {
+      position: absolute;
+      top: -4px;
+      bottom: -4px;
+      left: 42%;
+      width: 2px;
+      background: var(--nds-text);
+    }
+  }
+
+  /* 06 · velocity */
+  .velo {
+    width: 100%;
+    height: 240px;
+    border-radius: var(--nds-radius-md);
+  }
+
+  /* 07 · draw */
+  .drawing {
+    width: min(600px, 100%);
+    height: auto;
+
+    path {
+      fill: none;
+      stroke: var(--nds-accent);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+
+      .doc:not(.is-live) & { stroke-dashoffset: 0; }
+    }
+  }
+
+  /* 08 · mini sorter */
+  .mini-board {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--nds-spacing-md);
+    width: min(480px, 100%);
+    padding: var(--nds-spacing-md);
+    border: 1px dashed var(--nds-border);
+    border-radius: var(--nds-radius-md);
+  }
+  .mini-col {
+    display: grid;
+    gap: var(--nds-spacing-2xs);
+    align-content: start;
+
+    p {
+      @include type.text-label;
+      color: var(--nds-neutral);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid var(--nds-border);
+      padding-bottom: 4px;
+      max-width: none;
+    }
+  }
+  .mini-chip {
+    @include type.text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    padding: 3px 10px;
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-full);
+    background: var(--nds-surface-2);
+    font-family: var(--nds-font-mono);
+    font-size: 0.72rem;
+    white-space: nowrap;
+
+    i { width: 6px; height: 6px; border-radius: 50%; }
+    &[data-cat='img'] i { background: var(--nds-success-high); }
+    &[data-cat='code'] i { background: var(--nds-accent); }
+  }
+  .is-sorting .mini-chip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform;
+  }
+
+  /* --------------------------- Prose furniture ---------------------------- */
+  .file {
+    @include type.text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    margin-bottom: calc(-1 * var(--nds-spacing-xs));
+    padding: 3px 12px;
+    border: 1px solid var(--nds-border);
+    border-bottom: none;
+    border-radius: var(--nds-radius-md) var(--nds-radius-md) 0 0;
+    background: color-mix(in srgb, var(--nds-surface-2) 90%, transparent);
+    font-family: var(--nds-font-mono);
+    font-size: 0.72rem;
+    color: var(--nds-accent);
+
+    &::before { content: '›'; color: var(--nds-disabled); }
+  }
+
+  .doc :global(pre.astro-code) {
+    margin: 0;
+    padding: var(--nds-spacing-md) var(--nds-spacing-lg);
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-md);
+    background: color-mix(in srgb, var(--nds-surface) 88%, transparent) !important;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  .doc :global(pre.astro-code code) { font-family: var(--nds-font-mono); }
+
+  .callout {
+    display: grid;
+    gap: var(--nds-spacing-2xs);
+    padding: var(--nds-spacing-md) var(--nds-spacing-lg);
+    border-radius: var(--nds-radius-md);
+    border: 1px solid var(--nds-border);
+    border-left-width: 3px;
+
+    &--why {
+      border-left-color: var(--nds-primary);
+      background: color-mix(in srgb, var(--nds-primary) 6%, transparent);
+    }
+    &--trap {
+      border-left-color: var(--nds-warning-high);
+      background: color-mix(in srgb, var(--nds-warning-high) 6%, transparent);
+    }
+    &__title {
+      @include type.text-label;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--nds-text);
+    }
+    p { max-width: none; }
+  }
+
+  .steps {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+
+    li {
+      @include type.text-base;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--nds-neutral);
+      position: relative;
+      padding-left: 52px;
+      counter-increment: step;
+
+      &::before {
+        content: counter(step, decimal-leading-zero);
+        position: absolute;
+        left: 0;
+        top: 2px;
+        font-family: var(--nds-font-mono);
+        color: var(--nds-accent);
+        border: 1px solid color-mix(in srgb, var(--nds-accent) 40%, var(--nds-border));
+        border-radius: var(--nds-radius-sm);
+        padding: 2px 7px;
+        font-size: 0.72rem;
+      }
+    }
+  }
+</style>

@@ -1,0 +1,350 @@
+---
+/**
+ * Contact page - static-friendly by design.
+ *
+ * The "form" is a mailto composer: it pre-fills the visitor's mail client and
+ * stores nothing server-side. To switch to a real backend later, point the
+ * submit handler at a Formspree/own endpoint and keep the same fields.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import BrandLinkedin from '../components/BrandLinkedin.astro';
+import { Mail, Copy, Send } from '@lucide/astro';
+import { Github, Gitea, Npm } from 'simple-icons-astro';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  Button,
+  TextField,
+  Select,
+  SelectOption,
+} from '@unkn0wndo3s/nova-design-system';
+import { site } from '../data/site';
+import { breadcrumbLd } from '../lib/seo';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const crumbs = [
+  { name: t('nav.home'), url: localizePath('/', locale) },
+  { name: t('nav.contact'), url: localizePath('/contact', locale) },
+];
+
+const subjects = [
+  { value: 'cdi', label: t('contact.form.subject.cdi') },
+  { value: 'freelance', label: t('contact.form.subject.freelance') },
+  { value: 'other', label: t('contact.form.subject.other') },
+];
+
+const elsewhere = [
+  { ...site.links.github, icon: 'github' },
+  { ...site.links.gitea, icon: 'gitea' },
+  { ...site.links.npm, icon: 'npm' },
+  { ...site.links.linkedin, icon: 'linkedin' },
+];
+---
+
+<BaseLayout
+  title={t('meta.contact.title')}
+  description={t('meta.contact.description')}
+  jsonLd={[breadcrumbLd(crumbs)]}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <Breadcrumb>
+      <BreadcrumbItem href={crumbs[0]!.url}>{crumbs[0]!.name}</BreadcrumbItem>
+      <BreadcrumbItem current>{crumbs[1]!.name}</BreadcrumbItem>
+    </Breadcrumb>
+  </nav>
+
+  <header class="page-head">
+    <Eyebrow>{t('avail.badge')}</Eyebrow>
+    <h1 class="page-title">{t('contact.title')}</h1>
+    <p class="page-lead">{t('contact.lead')}</p>
+  </header>
+
+  <div class="contact-grid">
+    <section class="composer" aria-labelledby="composer-title">
+      <h2 id="composer-title" class="visually-hidden">{t('contact.form.send')}</h2>
+
+      <div class="composer-fields" data-contact-form data-email={site.email}>
+        <div class="composer-row">
+          <TextField id="contact-name" label={t('contact.form.name')} type="text" placeholder="Jane Doe" />
+          <TextField
+            id="contact-email"
+            label={t('contact.form.email')}
+            type="email"
+            placeholder="jane@company.com"
+          />
+        </div>
+
+        <div class="composer-subject">
+          <span class="field-label">{t('contact.form.subject')}</span>
+          <Select default={subjects[0]!.label}>
+            {subjects.map((s) => <SelectOption value={s.label}>{s.label}</SelectOption>)}
+          </Select>
+        </div>
+
+        <TextField
+          id="contact-message"
+          label={t('contact.form.message')}
+          type="textarea"
+          max={1200}
+          placeholder="..."
+        />
+
+        <div class="composer-actions">
+          <Button type="primary" htmlType="button" data-contact-send>
+            <Send size={16} />
+            {t('contact.form.send')}
+          </Button>
+          <p class="composer-note">{t('contact.form.note')}</p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="direct">
+      <section class="direct-block" aria-labelledby="direct-title">
+        <h2 id="direct-title" class="direct-heading">{t('contact.email.label')}</h2>
+        <p class="direct-email">
+          <Mail size={18} aria-hidden="true" />
+          <span data-email-text>{site.email}</span>
+        </p>
+        <div class="direct-actions">
+          <Button type="secondary" href={`mailto:${site.email}`}>{t('contact.email.write')}</Button>
+          <Button
+            type="ghost"
+            htmlType="button"
+            data-copy-email
+            data-copied-label={t('contact.email.copied')}
+          >
+            <Copy size={16} />
+            <span data-copy-label>{t('contact.email.copy')}</span>
+          </Button>
+        </div>
+      </section>
+
+      <section class="direct-block" aria-labelledby="elsewhere-title">
+        <h2 id="elsewhere-title" class="direct-heading">{t('contact.elsewhere')}</h2>
+        <ul class="elsewhere-list">
+          {
+            elsewhere.map((l) => (
+              <li>
+                <a href={l.url} target="_blank" rel="noopener noreferrer">
+                  {l.icon === 'github' && <Github size={18} aria-hidden="true" />}
+                  {l.icon === 'gitea' && <Gitea size={18} aria-hidden="true" />}
+                  {l.icon === 'npm' && <Npm size={18} aria-hidden="true" />}
+                  {l.icon === 'linkedin' && <BrandLinkedin size={18} />}
+                  <span>{l.label}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </aside>
+  </div>
+</BaseLayout>
+
+<script>
+  /** Builds a mailto: URL from the composer fields and opens it. Zero data stored. */
+  function initContact() {
+    const root = document.querySelector<HTMLElement>('[data-contact-form]');
+    if (!root) return;
+
+    const email = root.dataset.email ?? '';
+    const send = root.querySelector<HTMLButtonElement>('[data-contact-send]');
+
+    send?.addEventListener('click', () => {
+      const name = (document.getElementById('contact-name')?.querySelector('input') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const from = (document.getElementById('contact-email')?.querySelector('input') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const message = (document.getElementById('contact-message')?.querySelector('textarea') as HTMLTextAreaElement | null)?.value?.trim() ?? '';
+
+      const selected =
+        root.querySelector<HTMLElement>('nds-select [aria-selected="true"]')?.dataset.value ??
+        root.querySelector<HTMLElement>('nds-select')?.dataset.default ??
+        '';
+
+      const subject = `[Portfolio] ${selected}${name ? ` - ${name}` : ''}`;
+      const bodyParts = [message];
+      if (name || from) bodyParts.push('', '--', [name, from].filter(Boolean).join(' · '));
+
+      const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyParts.join('\n'))}`;
+      window.location.href = url;
+    });
+
+    // Copy-to-clipboard with temporary label swap.
+    const copyBtn = document.querySelector<HTMLButtonElement>('[data-copy-email]');
+    const copyLabel = copyBtn?.querySelector<HTMLElement>('[data-copy-label]');
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(email);
+        if (copyLabel && copyBtn.dataset.copiedLabel) {
+          const original = copyLabel.textContent;
+          copyLabel.textContent = copyBtn.dataset.copiedLabel;
+          window.setTimeout(() => {
+            copyLabel.textContent = original;
+          }, 1800);
+        }
+      } catch {
+        /* Clipboard unavailable (permissions/http) - the address stays visible as text. */
+      }
+    });
+  }
+
+  initContact();
+  document.addEventListener('astro:page-load', initContact);
+</script>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .crumbs {
+    margin-block: var(--nds-spacing-lg) var(--nds-spacing-xl);
+  }
+
+  .page-head {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    margin-block-end: var(--nds-spacing-2xl);
+    max-width: 46rem;
+  }
+
+  .page-title {
+    @include type.text-4xl;
+    margin: 0;
+    color: var(--nds-text);
+  }
+
+  .page-lead {
+    @include type.text-lg;
+    margin: 0;
+    color: var(--nds-neutral);
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: var(--nds-spacing-2xl);
+    align-items: start;
+    margin-block-end: var(--nds-spacing-3xl);
+
+    @media (max-width: 840px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .composer {
+    background: var(--nds-surface);
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    padding: var(--nds-spacing-xl);
+    box-shadow: var(--nds-shadow-sm);
+  }
+
+  .composer-fields {
+    display: grid;
+    gap: var(--nds-spacing-lg);
+  }
+
+  .composer-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--nds-spacing-lg);
+
+    @media (max-width: 560px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .composer-subject {
+    display: grid;
+    gap: var(--nds-spacing-2xs);
+    max-width: 22rem;
+  }
+
+  .field-label {
+    @include type.text-sm;
+    color: var(--nds-neutral);
+  }
+
+  .composer-actions {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    justify-items: start;
+  }
+
+  .composer-note {
+    @include type.text-sm;
+    margin: 0;
+    color: var(--nds-disabled);
+  }
+
+  .direct {
+    display: grid;
+    gap: var(--nds-spacing-xl);
+  }
+
+  .direct-block {
+    background: var(--nds-surface);
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    padding: var(--nds-spacing-xl);
+  }
+
+  .direct-heading {
+    @include type.text-lg;
+    margin: 0 0 var(--nds-spacing-md);
+    color: var(--nds-text);
+  }
+
+  .direct-email {
+    @include type.text-base;
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    margin: 0 0 var(--nds-spacing-md);
+    color: var(--nds-primary);
+    word-break: break-all;
+  }
+
+  .direct-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-sm);
+  }
+
+  .elsewhere-list {
+    display: grid;
+    gap: var(--nds-spacing-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: var(--nds-spacing-sm);
+      padding: var(--nds-spacing-sm) var(--nds-spacing-md);
+      border-radius: var(--nds-radius-md);
+      color: var(--nds-text);
+      text-decoration: none;
+      transition: background-color 150ms ease, color 150ms ease;
+
+      &:hover {
+        background: var(--nds-surface-hover);
+        color: var(--nds-accent);
+      }
+    }
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>

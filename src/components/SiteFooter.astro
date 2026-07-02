@@ -1,134 +1,98 @@
 ---
-import { Gitea, Github, Npm } from 'simple-icons-astro';
-import { Mail } from '@lucide/astro';
+import { Github, Gitea, Npm } from 'simple-icons-astro';
 import BrandLinkedin from './BrandLinkedin.astro';
 import { site } from '../data/site';
+import { getLocaleFromUrl, useTranslations } from '../i18n';
 
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
 const year = new Date().getFullYear();
-const socials = [
-  { ...site.links.gitea, Comp: Gitea },
-  { ...site.links.github, Comp: Github },
-  { ...site.links.npm, Comp: Npm },
-];
 ---
 
 <footer class="footer">
   <div class="footer__inner">
-    <div class="footer__brand">
-      <span class="footer__mark" aria-hidden="true"></span>
-      <div>
-        <p class="footer__name">{site.name}</p>
-        <p class="footer__role">{site.role} · {site.location}</p>
-      </div>
+    <div>
+      <p class="footer__name">{site.name}</p>
+      <p class="footer__role">{t('footer.role')}</p>
     </div>
 
-    <nav class="footer__links" aria-label="Liens externes">
-      {
-        socials.map((s) => (
-          <a class="footer__link" href={s.url} target="_blank" rel="noopener noreferrer" title={s.label}>
-            <s.Comp size={18} fill="currentColor" />
-            <span>{s.label}</span>
-          </a>
-        ))
-      }
-      <a class="footer__link" href={site.links.linkedin.url} target="_blank" rel="noopener noreferrer" title="LinkedIn">
-        <BrandLinkedin size={18} />
-        <span>LinkedIn</span>
+    <nav class="footer__links" aria-label="Social">
+      <a href={site.links.gitea.url} title="Gitea" rel="me noopener" target="_blank">
+        <Gitea size={20} aria-hidden="true" /><span class="sr-only">Gitea</span>
       </a>
-      <a class="footer__link" href={`mailto:${site.email}`} title="E-mail">
-        <Mail size={18} />
-        <span>E-mail</span>
+      <a href={site.links.github.url} title="GitHub" rel="me noopener" target="_blank">
+        <Github size={20} aria-hidden="true" /><span class="sr-only">GitHub</span>
       </a>
+      <a href={site.links.npm.url} title="npm" rel="me noopener" target="_blank">
+        <Npm size={20} aria-hidden="true" /><span class="sr-only">npm</span>
+      </a>
+      <a href={site.links.linkedin.url} title="LinkedIn" rel="me noopener" target="_blank">
+        <BrandLinkedin size={20} /><span class="sr-only">LinkedIn</span>
+      </a>
+      <a href={`mailto:${site.email}`} title="E-mail">{t('contact.email.label')}</a>
     </nav>
   </div>
 
-  <div class="footer__base">
-    <span>© {year} {site.name}</span>
-    <span class="footer__sep" aria-hidden="true">·</span>
-    <span>Made with Astro + Nova Design System</span>
-  </div>
+  <p class="footer__legal">© {year} {site.name} · {t('footer.madeWith')}</p>
 </footer>
 
 <style lang="scss">
-  @use 'styles/type' as *;
+  @use '../styles/type' as type;
 
   .footer {
     position: relative;
     z-index: 10;
-    border-top: var(--nds-border-width-thin) solid
-      color-mix(in srgb, var(--nds-border) 80%, transparent);
-    background: color-mix(in srgb, var(--nds-surface) 55%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    margin-top: var(--nds-spacing-3xl);
+    margin-top: clamp(48px, 8vh, 96px);
+    padding: var(--nds-spacing-2xl) clamp(20px, 5vw, 56px) var(--nds-spacing-xl);
+    border-top: var(--nds-border-width-thin) solid var(--nds-border);
+    background: color-mix(in srgb, var(--nds-surface) 60%, transparent);
   }
+
   .footer__inner {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: var(--nds-spacing-2xl) clamp(20px, 5vw, 56px) var(--nds-spacing-lg);
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
     flex-wrap: wrap;
-    gap: var(--nds-spacing-lg);
-  }
-  .footer__brand {
-    display: flex;
     align-items: center;
-    gap: var(--nds-spacing-sm);
+    justify-content: space-between;
+    gap: var(--nds-spacing-lg);
+    max-width: 1200px;
+    margin-inline: auto;
   }
-  .footer__mark {
-    width: 30px;
-    height: 30px;
-    border-radius: var(--nds-radius-md);
-    background: linear-gradient(135deg, var(--nds-primary), var(--nds-accent));
-    box-shadow: 0 0 18px color-mix(in srgb, var(--nds-primary) 45%, transparent);
-  }
-  .footer__name {
-    @include text-xl;
-    margin: 0;
-  }
+
+  .footer__name { @include type.text-xl; }
   .footer__role {
-    @include text-sm;
+    @include type.text-base;
     color: var(--nds-neutral);
-    margin: 2px 0 0;
+    margin-top: var(--nds-spacing-2xs);
   }
+
   .footer__links {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: var(--nds-spacing-md);
-  }
-  .footer__link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--nds-spacing-xs);
-    color: var(--nds-neutral);
-    text-decoration: none;
-    @include text-label;
-    transition: color 140ms ease;
-    &:hover {
-      color: var(--nds-primary);
-    }
-    &:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 3px var(--nds-ring);
-      border-radius: var(--nds-radius-sm);
+
+    a {
+      @include type.text-label;
+      display: inline-flex;
+      color: var(--nds-neutral);
+      transition: color 0.15s ease;
+      &:hover { color: var(--nds-primary); }
     }
   }
-  .footer__base {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: var(--nds-spacing-md) clamp(20px, 5vw, 56px) var(--nds-spacing-2xl);
-    display: flex;
-    align-items: center;
-    gap: var(--nds-spacing-xs);
-    border-top: var(--nds-border-width-thin) solid
-      color-mix(in srgb, var(--nds-border) 50%, transparent);
-    @include text-sm;
+
+  .footer__legal {
+    @include type.text-sm;
+    max-width: 1200px;
+    margin: var(--nds-spacing-lg) auto 0;
     color: var(--nds-neutral);
-    font-family: var(--nds-font-mono);
   }
-  .footer__sep {
-    opacity: 0.5;
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>

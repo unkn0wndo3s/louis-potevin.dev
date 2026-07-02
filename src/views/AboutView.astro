@@ -1,0 +1,215 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import { Badge, Button } from '@unkn0wndo3s/nova-design-system';
+import { breadcrumbLd, profilePageLd } from '../lib/seo';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+import type { Localized } from '../data/projects';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+interface Step {
+  period: Localized;
+  role: Localized;
+  place: string;
+  detail: Localized;
+}
+
+const steps: Step[] = [
+  {
+    period: { fr: 'Sept. 2025 - Août 2026', en: 'Sept. 2025 - Aug. 2026' },
+    role: { fr: 'Développeur full-stack en alternance', en: 'Full-stack developer (apprenticeship)' },
+    place: 'Legrand France, Limoges',
+    detail: {
+      fr: "Développement du DAN, application web interne pour les ateliers de production : refonte du module de gestion des utilisateurs (Vue.js/TypeScript, export CSV) et du module de statistiques avec composants graphiques sur mesure. Back-end Node.js/Express.",
+      en: 'Development of DAN, an internal web app for production workshops: rework of the user management module (Vue.js/TypeScript, CSV export) and of the statistics module with custom chart components. Node.js/Express back-end.',
+    },
+  },
+  {
+    period: { fr: 'Avril - Août 2025', en: 'April - Aug. 2025' },
+    role: { fr: "Stage puis job d'été", en: 'Internship, then summer job' },
+    place: 'Legrand France, Limoges',
+    detail: {
+      fr: "Premiers travaux sur le DAN : montée en compétence sur la base de code, premières fonctionnalités livrées en production. L'expérience s'est prolongée en alternance sur la même application.",
+      en: 'First work on DAN: ramping up on the codebase, first features shipped to production. The experience continued as an apprenticeship on the same application.',
+    },
+  },
+  {
+    period: { fr: '2023 - 2026', en: '2023 - 2026' },
+    role: { fr: 'BUT MMI, parcours Développement Web (DWDI)', en: 'BUT MMI degree, Web Development track (DWDI)' },
+    place: 'IUT du Limousin',
+    detail: {
+      fr: "Formation en développement web et dispositifs interactifs : front-end, back-end, UX, gestion de projet. Diplôme obtenu en 2026.",
+      en: 'Training in web development and interactive systems: front-end, back-end, UX, project management. Graduating in 2026.',
+    },
+  },
+];
+
+interface Value {
+  title: Localized;
+  body: Localized;
+}
+
+const values: Value[] = [
+  {
+    title: { fr: 'Livrer, pas prototyper', en: 'Ship, not prototype' },
+    body: {
+      fr: 'Un projet est terminé quand il tourne en production avec sa CI. Mon design system est sur npm, mon infra héberge ce site : tout ce que je montre est réellement en service.',
+      en: 'A project is done when it runs in production with its CI. My design system is on npm, my infrastructure hosts this site: everything I show is actually in service.',
+    },
+  },
+  {
+    title: { fr: 'Du composant au serveur', en: 'From component to server' },
+    body: {
+      fr: "Je conçois l'interface, l'API qui la sert et la machine qui l'héberge. Cette vision complète évite les frictions entre front, back et ops.",
+      en: 'I design the interface, the API that serves it and the machine that hosts it. That end-to-end view removes friction between front, back and ops.',
+    },
+  },
+  {
+    title: { fr: 'Réutilisable par défaut', en: 'Reusable by default' },
+    body: {
+      fr: "Tokens, composants, pipelines : je factorise ce qui se répète. C'est ce qui m'a mené à construire Nova Design System plutôt que de copier-coller des styles.",
+      en: 'Tokens, components, pipelines: I factor out what repeats. That mindset is what led me to build Nova Design System instead of copy-pasting styles.',
+    },
+  },
+];
+
+const crumbs = [
+  { name: t('nav.home'), url: localizePath('/', locale) },
+  { name: t('nav.about'), url: localizePath('/about', locale) },
+];
+const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://louis-potevin.dev').href;
+const jsonLd = [breadcrumbLd(crumbs), profilePageLd(pageUrl)];
+---
+
+<BaseLayout title={t('meta.about.title')} description={t('meta.about.description')} jsonLd={jsonLd}>
+  <header class="page-head">
+    <h1 class="page-title">{t('about.title')}</h1>
+    <p class="page-lead">{t('about.lead')}</p>
+    <p class="availability">
+      <Badge type="success">{t('avail.badge')}</Badge>
+      <span>{t('avail.line')} · {t('avail.where')}</span>
+    </p>
+  </header>
+
+  <section class="section" aria-labelledby="exp-title">
+    <div class="eyebrow-row"><Eyebrow index="01">{t('about.exp.eyebrow')}</Eyebrow></div>
+    <h2 id="exp-title" class="section-title">{t('about.exp.title')}</h2>
+    <ol class="timeline">
+      {steps.map((step) => (
+        <li>
+          <p class="timeline__period">{step.period[locale]}</p>
+          <h3>{step.role[locale]}</h3>
+          <p class="timeline__place">{step.place}</p>
+          <p class="timeline__detail">{step.detail[locale]}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="section" aria-labelledby="values-title">
+    <div class="eyebrow-row"><Eyebrow index="02">{t('about.values.eyebrow')}</Eyebrow></div>
+    <h2 id="values-title" class="section-title">{t('about.values.title')}</h2>
+    <ul class="values">
+      {values.map((value) => (
+        <li>
+          <h3>{value.title[locale]}</h3>
+          <p>{value.body[locale]}</p>
+        </li>
+      ))}
+    </ul>
+    <div class="actions">
+      <Button href={localizePath('/contact', locale)} size="lg">{t('nav.cta')}</Button>
+    </div>
+  </section>
+</BaseLayout>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .page-head {
+    display: grid;
+    gap: var(--nds-spacing-md);
+    padding-block: clamp(48px, 8vh, 96px) clamp(24px, 4vh, 48px);
+  }
+
+  .page-title { @include type.text-5xl; font-size: clamp(2rem, 5.5vw, 3.4rem); }
+  .page-lead {
+    @include type.text-lg;
+    font-weight: 400;
+    max-width: 62ch;
+    color: var(--nds-neutral);
+  }
+
+  .availability {
+    @include type.text-label;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+    color: var(--nds-neutral);
+  }
+
+  .timeline {
+    display: grid;
+    gap: var(--nds-spacing-xl);
+    margin: var(--nds-spacing-xl) 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      position: relative;
+      padding-left: var(--nds-spacing-xl);
+      border-left: var(--nds-border-width-medium) solid var(--nds-border);
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: -7px;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        border-radius: var(--nds-radius-full);
+        background: var(--nds-primary);
+      }
+    }
+
+    h3 { @include type.text-xl; margin-block: var(--nds-spacing-2xs); }
+  }
+
+  .timeline__period {
+    @include type.text-label;
+    color: var(--nds-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .timeline__place { @include type.text-label; color: var(--nds-neutral); }
+  .timeline__detail {
+    @include type.text-base;
+    font-size: 1rem;
+    margin-top: var(--nds-spacing-xs);
+    max-width: 64ch;
+    color: var(--nds-neutral);
+  }
+
+  .values {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: var(--nds-spacing-lg);
+    margin: var(--nds-spacing-xl) 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      padding: var(--nds-spacing-lg);
+      background: color-mix(in srgb, var(--nds-surface) 88%, transparent);
+      border: var(--nds-border-width-thin) solid var(--nds-border);
+      border-radius: var(--nds-radius-lg);
+    }
+    h3 { @include type.text-xl; color: var(--nds-primary); margin-bottom: var(--nds-spacing-xs); }
+    p { @include type.text-base; color: var(--nds-neutral); }
+  }
+
+  .actions { margin-top: var(--nds-spacing-2xl); }
+</style>

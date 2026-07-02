@@ -1,0 +1,329 @@
+---
+/**
+ * Custom scene for `nova-infra`: the journey of a request.
+ *
+ * A pinned SVG network (Visitor → Cloudflare → Apache/VPS → services) whose
+ * edges and nodes are drawn by scroll. Once drawn, a packet keeps traveling
+ * the graph (time-based) so the diagram feels alive. Captions follow the
+ * scroll. Reduced motion / no JS: the fully drawn diagram, no pin.
+ */
+import Eyebrow from '../Eyebrow.astro';
+import { getLocaleFromUrl, useTranslations } from '../../i18n';
+import type { Localized } from '../../data/projects';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const captions: Localized[] = [
+  {
+    fr: 'Une requête arrive : DNS et TLS passent par Cloudflare, qui filtre et met en cache.',
+    en: 'A request comes in: DNS and TLS go through Cloudflare, which filters and caches.',
+  },
+  {
+    fr: "Apache, en reverse proxy sur le VPS OVH, route chaque domaine vers le bon service.",
+    en: 'Apache, reverse-proxying on the OVH VPS, routes each domain to the right service.',
+  },
+  {
+    fr: 'Gitea, Vaultwarden, le runner CI et les sites tournent côte à côte - auto-hébergés, sauvegardés, monitorés.',
+    en: 'Gitea, Vaultwarden, the CI runner and the sites run side by side - self-hosted, backed up, monitored.',
+  },
+];
+
+interface Node {
+  id: string;
+  label: string;
+  sub?: string;
+  x: number;
+  y: number;
+  w: number;
+}
+const nodes: Node[] = [
+  { id: 'visitor', label: locale === 'fr' ? 'Visiteur' : 'Visitor', x: 40, y: 236, w: 130 },
+  { id: 'cf', label: 'Cloudflare', sub: 'DNS · TLS · cache', x: 250, y: 236, w: 160 },
+  { id: 'apache', label: 'Apache', sub: 'reverse proxy', x: 490, y: 236, w: 160 },
+  { id: 'gitea', label: 'Gitea', sub: 'git.novaprojects.dev', x: 750, y: 90, w: 180 },
+  { id: 'vault', label: 'Vaultwarden', sub: locale === 'fr' ? 'mots de passe' : 'passwords', x: 750, y: 236, w: 180 },
+  { id: 'sites', label: 'Sites', sub: 'louis-potevin.dev', x: 750, y: 382, w: 180 },
+];
+
+// Edges as SVG path data (right side of source → left side of target).
+const edges: { id: string; d: string }[] = [
+  { id: 'e-visitor-cf', d: 'M 170 264 C 210 264 210 264 250 264' },
+  { id: 'e-cf-apache', d: 'M 410 264 C 450 264 450 264 490 264' },
+  { id: 'e-apache-gitea', d: 'M 650 264 C 710 264 690 118 750 118' },
+  { id: 'e-apache-vault', d: 'M 650 264 C 690 264 710 264 750 264' },
+  { id: 'e-apache-sites', d: 'M 650 264 C 710 264 690 410 750 410' },
+];
+---
+
+<section class="infra" data-infra data-captions={JSON.stringify(captions.map((c) => c[locale]))}>
+  <div class="stage">
+    <header class="stage-head">
+      <Eyebrow>{t('scene.infra.eyebrow')}</Eyebrow>
+      <h2>{t('scene.infra.title')}</h2>
+    </header>
+
+    <svg viewBox="0 0 960 500" class="net" role="img" aria-label={t('scene.infra.title')}>
+      <!-- VPS enclosure -->
+      <g data-node="vps">
+        <rect x="460" y="40" width="486" height="430" rx="16" class="vps-box" />
+        <text x="482" y="72" class="vps-label">VPS OVH · Debian</text>
+      </g>
+
+      {edges.map((e) => <path id={e.id} d={e.d} pathLength="1" class="edge" data-edge />)}
+
+      {nodes.map((n) => (
+        <g data-node={n.id} class="node">
+          <rect x={n.x} y={n.y} width={n.w} height="56" rx="10" />
+          <text x={n.x + 16} y={n.y + (n.sub ? 24 : 33)} class="node-label">{n.label}</text>
+          {n.sub && <text x={n.x + 16} y={n.y + 42} class="node-sub">{n.sub}</text>}
+        </g>
+      ))}
+
+      <circle class="packet" data-packet r="5" cx="-20" cy="-20" />
+      <circle class="packet packet--trail" data-packet-trail r="9" cx="-20" cy="-20" />
+    </svg>
+
+    <p class="caption" data-caption aria-live="polite">{captions[0]![locale]}</p>
+    <p class="hint" aria-hidden="true">{t('scene.hint')}</p>
+  </div>
+</section>
+
+<script>
+  import { scrub, window01 } from '../../lib/scrub';
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-infra]');
+    if (!root) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      root.classList.add('static');
+      return;
+    }
+    root.classList.add('is-ready');
+
+    const edges = Array.from(root.querySelectorAll<SVGPathElement>('[data-edge]'));
+    const nodes = Array.from(root.querySelectorAll<SVGGElement>('[data-node]'));
+    const packet = root.querySelector<SVGCircleElement>('[data-packet]')!;
+    const trail = root.querySelector<SVGCircleElement>('[data-packet-trail]')!;
+    const captionEl = root.querySelector<HTMLElement>('[data-caption]')!;
+    const captions: string[] = JSON.parse(root.dataset.captions ?? '[]');
+
+    // Draw order: vps box → visitor → e1 → cf → e2 → apache → branches.
+    const drawOrder: (SVGElement | undefined)[] = [
+      nodes.find((n) => n.dataset.node === 'vps'),
+      nodes.find((n) => n.dataset.node === 'visitor'),
+      edges[0],
+      nodes.find((n) => n.dataset.node === 'cf'),
+      edges[1],
+      nodes.find((n) => n.dataset.node === 'apache'),
+      edges[2],
+      nodes.find((n) => n.dataset.node === 'gitea'),
+      edges[3],
+      nodes.find((n) => n.dataset.node === 'vault'),
+      edges[4],
+      nodes.find((n) => n.dataset.node === 'sites'),
+    ];
+
+    let progress = 0;
+    scrub(root, (p) => {
+      progress = p;
+      // Sequential reveal across the first 70% of the scene.
+      drawOrder.forEach((el, i) => {
+        if (!el) return;
+        const a = 0.05 + (i / drawOrder.length) * 0.62;
+        const v = window01(p, a, a + 0.08);
+        if (el.hasAttribute('data-edge')) {
+          (el as SVGPathElement).style.strokeDashoffset = String(1 - v);
+        } else {
+          el.style.opacity = String(v);
+          el.style.transform = `translateY(${(1 - v) * 14}px)`;
+        }
+      });
+      // Captions in thirds.
+      const idx = p < 0.34 ? 0 : p < 0.68 ? 1 : 2;
+      if (captionEl.dataset.idx !== String(idx)) {
+        captionEl.dataset.idx = String(idx);
+        captionEl.style.opacity = '0';
+        window.setTimeout(() => {
+          captionEl.textContent = captions[idx]!;
+          captionEl.style.opacity = '1';
+        }, 180);
+      }
+    });
+
+    // Live packet: visitor → cf → apache → (cycling branch), time-based.
+    const legs = [edges[0]!, edges[1]!];
+    const branches = [edges[2]!, edges[3]!, edges[4]!];
+    const lens = [...legs, ...branches].map((e) => e.getTotalLength());
+    let tAcc = 0;
+    let lastT = performance.now();
+    let branch = 0;
+    const loop = (now: number) => {
+      const dt = Math.min((now - lastT) / 1000, 0.05);
+      lastT = now;
+      if (progress > 0.2) {
+        tAcc += dt * 0.55;
+        if (tAcc >= 1) {
+          tAcc = 0;
+          branch = (branch + 1) % branches.length;
+        }
+        // Route = leg0 (0-0.33) → leg1 (0.33-0.66) → branch (0.66-1).
+        let el: SVGPathElement;
+        let local: number;
+        if (tAcc < 1 / 3) {
+          el = legs[0]!;
+          local = tAcc * 3;
+        } else if (tAcc < 2 / 3) {
+          el = legs[1]!;
+          local = (tAcc - 1 / 3) * 3;
+        } else {
+          el = branches[branch]!;
+          local = (tAcc - 2 / 3) * 3;
+        }
+        const len = lens[[...legs, ...branches].indexOf(el)]!;
+        const pt = el.getPointAtLength(local * len);
+        packet.setAttribute('cx', String(pt.x));
+        packet.setAttribute('cy', String(pt.y));
+        trail.setAttribute('cx', String(pt.x));
+        trail.setAttribute('cy', String(pt.y));
+        packet.style.opacity = '1';
+        trail.style.opacity = '0.35';
+      } else {
+        packet.style.opacity = '0';
+        trail.style.opacity = '0';
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  init();
+</script>
+
+<style lang="scss">
+  @use '../../styles/type' as type;
+
+  .infra {
+    /* Pinned scene: tall section, sticky stage. */
+    margin-block: clamp(40px, 8vh, 96px);
+
+    &.is-ready {
+      height: 300vh;
+    }
+  }
+
+  .stage {
+    display: grid;
+    gap: var(--nds-spacing-lg);
+    justify-items: center;
+    padding-block: var(--nds-spacing-xl);
+
+    .is-ready & {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      align-content: center;
+    }
+  }
+
+  .stage-head {
+    display: grid;
+    gap: var(--nds-spacing-xs);
+    justify-items: center;
+    text-align: center;
+
+    h2 {
+      @include type.text-3xl;
+      color: var(--nds-text);
+    }
+  }
+
+  .net {
+    width: min(960px, 100%);
+    height: auto;
+    overflow: visible;
+  }
+
+  .vps-box {
+    fill: color-mix(in srgb, var(--nds-surface) 40%, transparent);
+    stroke: var(--nds-border);
+    stroke-dasharray: 6 6;
+  }
+  .vps-label {
+    @include type.text-label;
+    fill: var(--nds-disabled);
+    font-family: var(--nds-font-mono);
+    font-size: 13px;
+  }
+
+  .edge {
+    fill: none;
+    stroke: var(--nds-primary);
+    stroke-width: 1.5;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    opacity: 0.85;
+  }
+
+  .node {
+    opacity: 0;
+
+    rect {
+      fill: color-mix(in srgb, var(--nds-surface-2) 92%, transparent);
+      stroke: var(--nds-primary);
+      stroke-width: 1;
+    }
+    .node-label {
+      fill: var(--nds-text);
+      font-family: var(--nds-font-mono);
+      font-size: 15px;
+    }
+    .node-sub {
+      fill: var(--nds-neutral);
+      font-size: 11px;
+      font-family: var(--nds-font-sans);
+    }
+  }
+  g[data-node='vps'] {
+    opacity: 0;
+  }
+
+  .packet {
+    fill: var(--nds-accent);
+    opacity: 0;
+    filter: drop-shadow(0 0 6px var(--nds-accent));
+  }
+  .packet--trail {
+    fill: var(--nds-accent);
+  }
+
+  .caption {
+    @include type.text-base;
+    min-height: 3em;
+    max-width: 60ch;
+    text-align: center;
+    color: var(--nds-neutral);
+    transition: opacity 0.18s ease;
+  }
+
+  .hint {
+    @include type.text-sm;
+    color: var(--nds-disabled);
+
+    .static & {
+      display: none;
+    }
+  }
+
+  /* Reduced motion / no JS: everything drawn, no pin. */
+  .infra:not(.is-ready) {
+    .edge {
+      stroke-dashoffset: 0;
+    }
+    .node,
+    g[data-node='vps'] {
+      opacity: 1;
+    }
+  }
+</style>

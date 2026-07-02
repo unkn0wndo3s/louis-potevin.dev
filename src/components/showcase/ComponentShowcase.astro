@@ -1,0 +1,871 @@
+---
+/**
+ * NDS scene, "la forge" - three scroll-driven acts on one pinned stage:
+ *
+ *  Act 1 - Tokens: raw design tokens (real CSS custom properties, shown as
+ *          live swatches) scattered in space converge into a neat row.
+ *  Act 2 - Assembly: eight REAL NDS components staged one by one in a 3D
+ *          tunnel - each arrives from the depth, holds in focus with its
+ *          spec panel (category, role, tokens, usage snippet), then flies
+ *          past the camera.
+ *  Act 3 - The system: the full library snaps into a grid, with the
+ *          package stats counting up and the install command typing out.
+ *
+ * Everything is CSS 3D + the shared scrub() helper - no WebGL needed here.
+ * Reduced motion / no JS: the acts render stacked and fully visible.
+ */
+import {
+  Avatar,
+  Badge,
+  Button,
+  Checkbox,
+  Pagination,
+  PaginationNumber,
+  Select,
+  SelectOption,
+  TextField,
+  Toggle,
+} from '@unkn0wndo3s/nova-design-system';
+import Eyebrow from '../Eyebrow.astro';
+import { getLocaleFromUrl, useTranslations } from '../../i18n';
+import type { Localized } from '../../data/projects';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+interface Stage {
+  id: string;
+  component: string;
+  category: Localized;
+  title: Localized;
+  desc: Localized;
+  tokens: string[];
+  usage: string;
+}
+
+const stages: Stage[] = [
+  {
+    id: 'button',
+    component: '<Button />',
+    category: { fr: 'Actions', en: 'Actions' },
+    title: { fr: 'Quatre intentions, une API.', en: 'Four intents, one API.' },
+    desc: {
+      fr: "primary, secondary, ghost, danger - trois tailles, états focus/disabled gérés, rendu <a> ou <button> selon la prop href.",
+      en: 'primary, secondary, ghost, danger - three sizes, focus/disabled states handled, renders <a> or <button> depending on the href prop.',
+    },
+    tokens: ['--nds-primary', '--nds-on-primary', '--nds-radius-md'],
+    usage: '<Button type="primary" size="md">Déployer</Button>',
+  },
+  {
+    id: 'badge',
+    component: '<Badge />',
+    category: { fr: 'Feedback', en: 'Feedback' },
+    title: { fr: 'Un statut lisible en un regard.', en: 'A status readable at a glance.' },
+    desc: {
+      fr: 'Cinq types sémantiques × deux variantes (soft/solid). Les couleurs viennent des paires de tokens statut, jamais de valeurs en dur.',
+      en: 'Five semantic types × two variants (soft/solid). Colors come from the status token pairs, never hard-coded values.',
+    },
+    tokens: ['--nds-success-high', '--nds-warning-high', '--nds-error-high'],
+    usage: '<Badge type="success">En production</Badge>',
+  },
+  {
+    id: 'toggle',
+    component: '<Toggle />',
+    category: { fr: 'Formulaires', en: 'Forms' },
+    title: { fr: 'Un vrai Web Component.', en: 'A real Web Component.' },
+    desc: {
+      fr: "Encapsulé en custom element : état interne, événements, accessibilité clavier - utilisable même hors d'Astro.",
+      en: 'Wrapped as a custom element: internal state, events, keyboard accessibility - usable even outside Astro.',
+    },
+    tokens: ['--nds-primary', '--nds-surface-2', '--nds-radius-full'],
+    usage: '<Toggle id="notifications" data-checked="true" />',
+  },
+  {
+    id: 'textfield',
+    component: '<TextField />',
+    category: { fr: 'Formulaires', en: 'Forms' },
+    title: { fr: 'Label, aide, compteur, erreurs.', en: 'Label, help, counter, errors.' },
+    desc: {
+      fr: 'Compteur de caractères optionnel, messages liés en aria-describedby, styles de focus et d’erreur issus des tokens.',
+      en: 'Optional character counter, messages linked via aria-describedby, focus and error styles driven by tokens.',
+    },
+    tokens: ['--nds-border', '--nds-text', '--nds-error-high'],
+    usage: '<TextField id="email" label="E-mail" type="email" />',
+  },
+  {
+    id: 'select',
+    component: '<Select />',
+    category: { fr: 'Formulaires', en: 'Forms' },
+    title: { fr: 'Un select stylable, enfin.', en: 'A styleable select, at last.' },
+    desc: {
+      fr: 'Listbox custom : navigation clavier, fermeture extérieure, valeur synchronisée dans un input caché pour les formulaires natifs.',
+      en: 'Custom listbox: keyboard navigation, outside-close, value mirrored into a hidden input for native forms.',
+    },
+    tokens: ['--nds-surface', '--nds-primary', '--nds-shadow-md'],
+    usage: '<Select default="TypeScript">…</Select>',
+  },
+  {
+    id: 'checkbox',
+    component: '<Checkbox />',
+    category: { fr: 'Formulaires', en: 'Forms' },
+    title: { fr: 'Coche native, peau custom.', en: 'Native check, custom skin.' },
+    desc: {
+      fr: "L'input natif reste dans le DOM (accessibilité et formulaires gratuits) ; seul le visuel est redessiné avec les tokens.",
+      en: 'The native input stays in the DOM (free accessibility and forms); only the visual layer is redrawn with tokens.',
+    },
+    tokens: ['--nds-primary', '--nds-border', '--nds-radius-sm'],
+    usage: '<Checkbox id="cgu" checked />',
+  },
+  {
+    id: 'avatar',
+    component: '<Avatar />',
+    category: { fr: 'Data display', en: 'Data display' },
+    title: { fr: 'Photo, sinon initiales.', en: 'Photo, else initials.' },
+    desc: {
+      fr: "Fallback automatique : si l'image manque ou casse, les initiales prennent le relais - le layout ne bouge pas d'un pixel.",
+      en: 'Automatic fallback: if the image is missing or breaks, initials take over - the layout never shifts a pixel.',
+    },
+    tokens: ['--nds-surface-2', '--nds-text', '--nds-radius-full'],
+    usage: '<Avatar type="initials" name="Louis Potevin" />',
+  },
+  {
+    id: 'pagination',
+    component: '<Pagination />',
+    category: { fr: 'Navigation', en: 'Navigation' },
+    title: { fr: 'Composable, pas configurable.', en: 'Composable, not configurable.' },
+    desc: {
+      fr: 'Pas de prop géante : des sous-composants (PaginationNumber…) à assembler - le pattern de composition utilisé partout dans NDS.',
+      en: 'No giant prop bag: sub-components (PaginationNumber…) you compose - the composition pattern used across NDS.',
+    },
+    tokens: ['--nds-primary', '--nds-neutral', '--nds-radius-md'],
+    usage: '<Pagination><PaginationNumber>1</PaginationNumber>…</Pagination>',
+  },
+];
+
+// Act 1: the raw material - real tokens rendered as live swatches.
+const tokenField: { name: string; kind: 'color' | 'radius' | 'space' | 'type' }[] = [
+  { name: '--nds-primary', kind: 'color' },
+  { name: '--nds-accent', kind: 'color' },
+  { name: '--nds-success-high', kind: 'color' },
+  { name: '--nds-warning-high', kind: 'color' },
+  { name: '--nds-error-high', kind: 'color' },
+  { name: '--nds-surface', kind: 'color' },
+  { name: '--nds-text', kind: 'color' },
+  { name: '--nds-neutral', kind: 'color' },
+  { name: '--nds-radius-md', kind: 'radius' },
+  { name: '--nds-radius-full', kind: 'radius' },
+  { name: '--nds-spacing-md', kind: 'space' },
+  { name: '--nds-spacing-xl', kind: 'space' },
+  { name: '--nds-font-mono', kind: 'type' },
+  { name: '--nds-font-sans', kind: 'type' },
+];
+// Deterministic scatter (build-time constants, so SSR output is stable).
+const scatter = [
+  [-38, -26], [32, -34], [-12, 30], [44, 18], [-46, 6], [8, -18],
+  [24, 34], [-28, -8], [40, -6], [-6, -38], [16, 12], [-40, 28],
+  [0, 22], [36, 2],
+];
+
+const library = [
+  'Avatar', 'Badge', 'Breadcrumb', 'Button', 'Card', 'Checkbox', 'Link', 'ListItem',
+  'LoadingBar', 'Modal', 'Navbar', 'Notification', 'NumericStepper', 'Pagination',
+  'Radio', 'Select', 'Sidebar', 'Tab', 'TextField', 'Toggle', 'Tooltip',
+];
+
+const actLabels: Record<string, Localized> = {
+  a1: { fr: 'Acte I - Tout part des tokens.', en: 'Act I - Everything starts with tokens.' },
+  a2: { fr: 'Acte II - Les composants, forgés un à un.', en: 'Act II - The components, forged one by one.' },
+  a3: { fr: 'Acte III - Le système.', en: 'Act III - The system.' },
+};
+---
+
+<section
+  class="forge"
+  data-forge
+  style={`--stages: ${stages.length}`}
+  data-a2={actLabels.a2![locale]}
+  data-a3={actLabels.a3![locale]}
+  aria-label={t('nds.showcase.title')}
+>
+  <div class="stage-pin">
+    <header class="head">
+      <Eyebrow>{t('nds.showcase.eyebrow')}</Eyebrow>
+      <h2 class="section-title">{t('nds.showcase.title')}</h2>
+      <p class="act-label" data-act-label>{actLabels.a1![locale]}</p>
+    </header>
+
+    <!-- ACT I · token field -->
+    <div class="act act--tokens" data-act1>
+      {tokenField.map((tk, i) => (
+        <span
+          class:list={['tk', `tk--${tk.kind}`]}
+          style={`--dx:${scatter[i]![0]}vmin; --dy:${scatter[i]![1]}vmin; --i:${i};`}
+        >
+          {tk.kind === 'color' && <i style={`background: var(${tk.name})`}></i>}
+          {tk.kind === 'radius' && <i style={`border-radius: var(${tk.name})`}></i>}
+          {tk.kind === 'space' && <i style={`width: var(${tk.name})`}></i>}
+          {tk.kind === 'type' && <i>Aa</i>}
+          <code>{tk.name}</code>
+        </span>
+      ))}
+    </div>
+
+    <!-- ACT II · the tunnel of components -->
+    <div class="act act--tunnel" data-act2>
+      {stages.map((s, i) => (
+        <article class="slide" data-slide={i} aria-labelledby={`forge-${s.id}`}>
+          <p class="slide__ghost" aria-hidden="true">{s.component}</p>
+
+          <div class="slide__grid">
+            <div class="slide__demo">
+              <div class="demo-halo" aria-hidden="true"></div>
+              {s.id === 'button' && (
+                <div class="demo-row">
+                  <Button size="md">Primary</Button>
+                  <Button type="secondary" size="md">Secondary</Button>
+                  <Button type="ghost" size="md">Ghost</Button>
+                  <Button type="danger" size="md">Danger</Button>
+                </div>
+              )}
+              {s.id === 'badge' && (
+                <div class="demo-row">
+                  <Badge type="primary">Primary</Badge>
+                  <Badge type="success">Success</Badge>
+                  <Badge type="warning" variant="solid">Warning</Badge>
+                  <Badge type="error">Error</Badge>
+                  <Badge type="info" variant="solid">Info</Badge>
+                </div>
+              )}
+              {s.id === 'toggle' && (
+                <div class="demo-row demo-row--big">
+                  <Toggle id="forge-toggle" data-checked="true" />
+                </div>
+              )}
+              {s.id === 'textfield' && (
+                <div class="demo-col">
+                  <TextField id="forge-tf" label="E-mail" type="email" placeholder="vous@exemple.dev" />
+                </div>
+              )}
+              {s.id === 'select' && (
+                <div class="demo-col">
+                  <Select default="TypeScript">
+                    <SelectOption value="TypeScript">TypeScript</SelectOption>
+                    <SelectOption value="Rust">Rust</SelectOption>
+                    <SelectOption value="Python">Python</SelectOption>
+                  </Select>
+                </div>
+              )}
+              {s.id === 'checkbox' && (
+                <div class="demo-row">
+                  <Checkbox id="forge-cb" checked />
+                  <Checkbox id="forge-cb2" />
+                </div>
+              )}
+              {s.id === 'avatar' && (
+                <div class="demo-row">
+                  <Avatar type="initials" name="Louis Potevin" />
+                  <Avatar type="initials" name="Nova Design" />
+                </div>
+              )}
+              {s.id === 'pagination' && (
+                <div class="demo-row">
+                  <Pagination>
+                    <PaginationNumber>1</PaginationNumber>
+                    <PaginationNumber>2</PaginationNumber>
+                    <PaginationNumber>3</PaginationNumber>
+                  </Pagination>
+                </div>
+              )}
+            </div>
+
+            <div class="slide__spec">
+              <p class="spec-cat">{s.category[locale]}</p>
+              <h3 id={`forge-${s.id}`}>{s.title[locale]}</h3>
+              <p class="spec-desc">{s.desc[locale]}</p>
+
+              <ul class="spec-tokens">
+                {s.tokens.map((tok) => (
+                  <li>
+                    <i style={`background: var(${tok}, transparent)`}></i>
+                    <code>{tok}</code>
+                  </li>
+                ))}
+              </ul>
+
+              <div class="spec-code" aria-label="Usage">
+                <div class="spec-code__bar"><span></span><span></span><span></span><em>usage.astro</em></div>
+                <pre><code>{s.usage}</code></pre>
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+
+      <p class="counter" aria-hidden="true">
+        <span data-counter>01</span> / {String(stages.length).padStart(2, '0')}
+      </p>
+      <ol class="ticks" aria-hidden="true">
+        {stages.map((_, i) => <li data-tick={i}></li>)}
+      </ol>
+    </div>
+
+    <!-- ACT III · the system -->
+    <div class="act act--finale" data-act3>
+      <ul class="lib">
+        {library.map((name, i) => (
+          <li style={`--i:${i}`}><code>{name}</code></li>
+        ))}
+      </ul>
+      <div class="stats">
+        <p><strong data-count-to="29">0</strong><span>{locale === 'fr' ? 'composants' : 'components'}</span></p>
+        <p><strong data-count-to="6">0</strong><span>{locale === 'fr' ? 'catégories' : 'categories'}</span></p>
+        <p><strong>v1.2.1</strong><span>npm</span></p>
+      </div>
+      <p class="install"><code data-typed>npm install @unkn0wndo3s/nova-design-system</code></p>
+    </div>
+
+    <p class="hint" aria-hidden="true">{t('nds.showcase.hint')}</p>
+  </div>
+</section>
+
+<script>
+  import { scrub, clamp01, window01 } from '../../lib/scrub';
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-forge]');
+    if (!root) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('static');
+      return;
+    }
+    root.classList.add('is-ready');
+
+    const actLabel = root.querySelector<HTMLElement>('[data-act-label]')!;
+    const labelTexts = [
+      actLabel.textContent ?? '',
+      root.dataset.a2 ?? '',
+      root.dataset.a3 ?? '',
+    ];
+    const act1 = root.querySelector<HTMLElement>('[data-act1]')!;
+    const act2 = root.querySelector<HTMLElement>('[data-act2]')!;
+    const act3 = root.querySelector<HTMLElement>('[data-act3]')!;
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-slide]'));
+    const ticks = Array.from(root.querySelectorAll<HTMLElement>('[data-tick]'));
+    const counter = root.querySelector<HTMLElement>('[data-counter]')!;
+    const counts = Array.from(root.querySelectorAll<HTMLElement>('[data-count-to]'));
+    const typed = root.querySelector<HTMLElement>('[data-typed]')!;
+    const typedFull = typed.textContent ?? '';
+    const n = slides.length;
+
+    // Act windows on the section's 0..1 progress.
+    const A1 = [0.0, 0.14] as const;
+    const A2 = [0.14, 0.86] as const;
+    const A3 = [0.86, 1.0] as const;
+
+    let lastIdx = -1;
+    let lastLabel = -1;
+
+    scrub(root, (p) => {
+      // ---- Act I: scattered tokens converge, then hand over. ----
+      const gather = window01(p, 0.02, 0.1);
+      const a1out = 1 - window01(p, A1[1] - 0.03, A1[1] + 0.02);
+      act1.style.opacity = String(a1out);
+      act1.style.setProperty('--gather', String(gather));
+      act1.style.visibility = a1out > 0.01 ? 'visible' : 'hidden';
+
+      // ---- Act II: the tunnel. ----
+      const inTunnel = window01(p, A1[1] - 0.02, A1[1] + 0.03) * (1 - window01(p, A2[1] - 0.02, A2[1] + 0.02));
+      act2.style.opacity = String(inTunnel);
+      act2.style.visibility = inTunnel > 0.01 ? 'visible' : 'hidden';
+
+      const tp = clamp01((p - A2[0]) / (A2[1] - A2[0])); // 0..1 inside act II
+      const f = tp * n; // fractional slide index
+      const idx = Math.min(n - 1, Math.floor(f));
+
+      slides.forEach((el, i) => {
+        const d = f - i - 0.5; // 0 when slide i is centered
+        // depth: future slides far away (negative z), past ones fly at the camera
+        const z = -d * 780;
+        const op = clamp01(1 - Math.abs(d) * 1.7);
+        const blur = Math.min(14, Math.abs(d) * 16);
+        const rot = d * -7;
+        el.style.opacity = String(op);
+        el.style.visibility = op > 0.01 && inTunnel > 0.01 ? 'visible' : 'hidden';
+        el.style.transform = `translate(-50%, -50%) perspective(1100px) translateZ(${z.toFixed(0)}px) rotateY(${rot.toFixed(2)}deg)`;
+        el.style.filter = `blur(${blur.toFixed(1)}px)`;
+        el.classList.toggle('is-front', Math.abs(d) < 0.28);
+      });
+
+      if (idx !== lastIdx && inTunnel > 0.2) {
+        lastIdx = idx;
+        counter.textContent = String(idx + 1).padStart(2, '0');
+        ticks.forEach((tk, i) => tk.classList.toggle('is-on', i <= idx));
+      }
+
+      // ---- Act III: the library grid + stats. ----
+      const fin = window01(p, A3[0] - 0.01, A3[0] + 0.06);
+      act3.style.opacity = String(fin);
+      act3.style.visibility = fin > 0.01 ? 'visible' : 'hidden';
+      act3.style.setProperty('--fin', String(fin));
+      const count = window01(p, A3[0], A3[0] + 0.1);
+      counts.forEach((c) => {
+        c.textContent = String(Math.round(Number(c.dataset.countTo) * count));
+      });
+      const chars = Math.round(typedFull.length * window01(p, A3[0] + 0.02, A3[0] + 0.11));
+      typed.textContent = typedFull.slice(0, Math.max(0, chars)) + (chars < typedFull.length && fin > 0 ? '▌' : '');
+
+      // ---- Act label. ----
+      const which = p < A1[1] ? 0 : p < A2[1] ? 1 : 2;
+      if (which !== lastLabel) {
+        lastLabel = which;
+        actLabel.style.opacity = '0';
+        window.setTimeout(() => {
+          actLabel.textContent = labelTexts[which]!;
+          actLabel.style.opacity = '1';
+        }, 160);
+      }
+    });
+  }
+
+  init();
+</script>
+
+<style lang="scss">
+  @use '../../styles/type' as type;
+
+  .forge {
+    margin-block: clamp(48px, 9vh, 110px);
+
+    &.is-ready {
+      /* runway: intro + one beat per stage + finale */
+      height: calc(140vh + var(--stages) * 85vh + 140vh);
+    }
+  }
+
+  .stage-pin {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: var(--nds-spacing-lg);
+    padding-block: var(--nds-spacing-xl);
+
+    .is-ready & {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      overflow: hidden;
+      grid-template-rows: auto 1fr auto;
+    }
+  }
+
+  .head {
+    display: grid;
+    justify-items: center;
+    gap: var(--nds-spacing-xs);
+    text-align: center;
+    z-index: 4;
+  }
+  .act-label {
+    @include type.text-label;
+    color: var(--nds-accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: opacity 0.16s ease;
+    min-height: 1.4em;
+  }
+
+  /* ------------------------------- ACT I ---------------------------------- */
+  .act--tokens {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    gap: var(--nds-spacing-sm);
+    max-width: 760px;
+
+    .is-ready & {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      max-width: none;
+      align-content: center;
+      padding-inline: 10vw;
+    }
+  }
+
+  .tk {
+    @include type.text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-2xs);
+    padding: 5px 12px;
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-full);
+    background: color-mix(in srgb, var(--nds-surface) 85%, transparent);
+    font-family: var(--nds-font-mono);
+    color: var(--nds-neutral);
+
+    i {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      font-style: normal;
+      font-size: 10px;
+      line-height: 12px;
+      color: var(--nds-text);
+    }
+    &.tk--space i {
+      height: 4px;
+      background: var(--nds-primary);
+      border-radius: 2px;
+    }
+    &.tk--radius i {
+      border: 1.5px solid var(--nds-accent);
+    }
+
+    /* scattered → gathered, driven by --gather */
+    .is-ready & {
+      transform: translate(
+        calc(var(--dx) * (1 - var(--gather, 0))),
+        calc(var(--dy) * (1 - var(--gather, 0)))
+      )
+      rotate(calc((1 - var(--gather, 0)) * (var(--i) - 7) * 4deg));
+      transition: none;
+    }
+  }
+
+  /* ------------------------------- ACT II --------------------------------- */
+  .act--tunnel {
+    position: relative;
+    width: 100%;
+
+    .is-ready & {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      visibility: hidden;
+      opacity: 0;
+    }
+  }
+
+  .slide {
+    /* static: stacked list */
+    position: relative;
+    margin-inline: auto;
+    margin-block: var(--nds-spacing-2xl);
+    width: min(980px, 92vw);
+
+    .is-ready & {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin: 0;
+      transform: translate(-50%, -50%);
+      visibility: hidden;
+      opacity: 0;
+      will-change: transform, opacity, filter;
+      pointer-events: none;
+
+      &.is-front {
+        pointer-events: auto;
+      }
+    }
+  }
+
+  .slide__ghost {
+    @include type.text-5xl;
+    position: absolute;
+    inset-inline: 0;
+    top: -0.9em;
+    text-align: center;
+    font-family: var(--nds-font-mono);
+    font-size: clamp(3rem, 11vw, 8rem);
+    color: transparent;
+    -webkit-text-stroke: 1px color-mix(in srgb, var(--nds-primary) 26%, transparent);
+    letter-spacing: -0.02em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .slide__grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: clamp(var(--nds-spacing-lg), 4vw, var(--nds-spacing-2xl));
+    align-items: center;
+    padding: clamp(var(--nds-spacing-lg), 3.5vw, var(--nds-spacing-2xl));
+    border: 1px solid color-mix(in srgb, var(--nds-border) 85%, transparent);
+    border-radius: var(--nds-radius-lg);
+    background: color-mix(in srgb, var(--nds-background) 72%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--nds-shadow-md);
+
+    @media (max-width: 840px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .slide__demo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 180px;
+    border: 1px dashed color-mix(in srgb, var(--nds-primary) 35%, transparent);
+    border-radius: var(--nds-radius-lg);
+    padding: var(--nds-spacing-lg);
+  }
+  .demo-halo {
+    position: absolute;
+    inset: 20%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--nds-primary) 18%, transparent), transparent);
+    pointer-events: none;
+  }
+  .demo-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+  }
+  .demo-row--big {
+    scale: 1.5;
+  }
+  .demo-col {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    width: min(300px, 100%);
+  }
+
+  .slide__spec {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    justify-items: start;
+
+    h3 {
+      @include type.text-2xl;
+      color: var(--nds-text);
+    }
+  }
+  .spec-cat {
+    @include type.text-label;
+    color: var(--nds-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .spec-desc {
+    @include type.text-sm;
+    color: var(--nds-neutral);
+    max-width: 46ch;
+  }
+  .spec-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      @include type.text-sm;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border: 1px solid var(--nds-border);
+      border-radius: var(--nds-radius-full);
+      font-family: var(--nds-font-mono);
+      font-size: 0.72rem;
+      color: var(--nds-neutral);
+
+      i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+      }
+    }
+  }
+
+  .spec-code {
+    width: 100%;
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-md);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--nds-surface) 92%, transparent);
+
+    &__bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--nds-border);
+
+      span {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--nds-border);
+      }
+      span:first-child { background: var(--nds-error-high); }
+      span:nth-child(2) { background: var(--nds-warning-high); }
+      span:nth-child(3) { background: var(--nds-success-high); }
+      em {
+        @include type.text-sm;
+        margin-left: auto;
+        font-style: normal;
+        font-size: 0.7rem;
+        color: var(--nds-disabled);
+        font-family: var(--nds-font-mono);
+      }
+    }
+    pre {
+      margin: 0;
+      padding: var(--nds-spacing-sm) var(--nds-spacing-md);
+      overflow-x: auto;
+    }
+    code {
+      font-family: var(--nds-font-mono);
+      font-size: 0.8rem;
+      color: var(--nds-primary);
+      white-space: pre;
+    }
+  }
+
+  .counter {
+    @include type.text-label;
+    position: absolute;
+    right: clamp(16px, 4vw, 48px);
+    bottom: clamp(14px, 3vh, 32px);
+    margin: 0;
+    font-family: var(--nds-font-mono);
+    color: var(--nds-neutral);
+    display: none;
+
+    span {
+      @include type.text-3xl;
+      color: var(--nds-accent);
+    }
+    .is-ready & { display: block; }
+  }
+
+  .ticks {
+    position: absolute;
+    left: clamp(16px, 4vw, 48px);
+    bottom: clamp(18px, 3vh, 36px);
+    display: none;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--nds-border);
+      transition: background-color 0.2s ease;
+
+      &.is-on { background: var(--nds-accent); }
+    }
+    .is-ready & { display: flex; }
+  }
+
+  /* ------------------------------- ACT III -------------------------------- */
+  .act--finale {
+    display: grid;
+    justify-items: center;
+    gap: var(--nds-spacing-lg);
+    width: min(880px, 94vw);
+
+    .is-ready & {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: auto;
+      align-content: center;
+      justify-items: center;
+      padding-inline: 8vw;
+      visibility: hidden;
+      opacity: 0;
+    }
+  }
+
+  .lib {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--nds-spacing-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 760px;
+
+    li {
+      padding: 4px 12px;
+      border: 1px solid var(--nds-border);
+      border-radius: var(--nds-radius-full);
+      background: color-mix(in srgb, var(--nds-surface) 80%, transparent);
+
+      code {
+        font-family: var(--nds-font-mono);
+        font-size: 0.75rem;
+        color: var(--nds-neutral);
+      }
+
+      .is-ready & {
+        opacity: calc(var(--fin, 0) * 1);
+        transform: translateY(calc((1 - var(--fin, 0)) * (12px + var(--i) * 1.2px)));
+      }
+    }
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(var(--nds-spacing-lg), 6vw, var(--nds-spacing-2xl));
+
+    p {
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+    }
+    strong {
+      @include type.text-4xl;
+      font-family: var(--nds-font-mono);
+      color: var(--nds-text);
+      font-variant-numeric: tabular-nums;
+    }
+    span {
+      @include type.text-label;
+      color: var(--nds-neutral);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+  }
+
+  .install {
+    code {
+      @include type.text-sm;
+      display: inline-block;
+      padding: var(--nds-spacing-xs) var(--nds-spacing-lg);
+      border: 1px solid color-mix(in srgb, var(--nds-accent) 50%, var(--nds-border));
+      border-radius: var(--nds-radius-md);
+      background: color-mix(in srgb, var(--nds-surface) 92%, transparent);
+      font-family: var(--nds-font-mono);
+      color: var(--nds-accent);
+      min-height: 1.5em;
+    }
+  }
+
+  .hint {
+    @include type.text-sm;
+    color: var(--nds-disabled);
+    z-index: 4;
+
+    .static &,
+    .forge:not(.is-ready) & {
+      display: none;
+    }
+  }
+</style>

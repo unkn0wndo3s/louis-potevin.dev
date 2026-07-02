@@ -1,0 +1,203 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TechIcon from '../components/TechIcon.astro';
+import ComponentShowcase from '../components/showcase/ComponentShowcase.astro';
+import InfraScene from '../components/scenes/InfraScene.astro';
+import BlueprintScene from '../components/scenes/BlueprintScene.astro';
+import SorterScene from '../components/scenes/SorterScene.astro';
+import { Badge, Button, Breadcrumb, BreadcrumbItem, Link } from '@unkn0wndo3s/nova-design-system';
+import { projects, type Project } from '../data/projects';
+import { breadcrumbLd, projectLd } from '../lib/seo';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+
+export interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const statusType = { live: 'success', maintained: 'info', wip: 'warning' } as const;
+const statusLabel = {
+  live: t('work.status.live'),
+  maintained: t('work.status.maintained'),
+  wip: t('work.status.wip'),
+} as const;
+
+const crumbs = [
+  { name: t('nav.home'), url: localizePath('/', locale) },
+  { name: t('nav.work'), url: localizePath('/work', locale) },
+  { name: project.name, url: localizePath(`/work/${project.slug}`, locale) },
+];
+
+const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://louis-potevin.dev').href;
+const jsonLd = [breadcrumbLd(crumbs), projectLd(project, locale, pageUrl)];
+
+const title = `${project.name} - ${t('meta.work.title')}`;
+const next = projects[(projects.findIndex((p) => p.slug === project.slug) + 1) % projects.length]!;
+---
+
+<BaseLayout title={title} description={project.summary[locale]} jsonLd={jsonLd} ogType="article">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <Breadcrumb>
+      <BreadcrumbItem href={crumbs[0]!.url}>{crumbs[0]!.name}</BreadcrumbItem>
+      <BreadcrumbItem href={crumbs[1]!.url}>{crumbs[1]!.name}</BreadcrumbItem>
+      <BreadcrumbItem current>{project.name}</BreadcrumbItem>
+    </Breadcrumb>
+  </nav>
+
+  <article>
+    <header class="head">
+      <Badge type={statusType[project.status]}>{statusLabel[project.status]}</Badge>
+      <h1 class="head__title">{project.name}</h1>
+      <p class="head__tagline">{project.tagline[locale]}</p>
+    </header>
+
+    {project.slug === 'nova-infra' && <InfraScene />}
+    {project.slug === 'portfolio' && <BlueprintScene />}
+    {project.slug === 'file-organizer' && <SorterScene />}
+
+    <div class="layout">
+      <div class="body">
+        {project.body.map((paragraph) => <p>{paragraph[locale]}</p>)}
+
+        <h2>{t('work.highlights')}</h2>
+        <ul class="highlights">
+          {project.highlights.map((h) => <li>{h[locale]}</li>)}
+        </ul>
+      </div>
+
+      <aside class="meta" aria-label={t('work.stack')}>
+        <h2>{t('work.stack')}</h2>
+        <ul class="meta__stack">
+          {project.stack.map((tech) => (
+            <li><TechIcon name={tech.name} icon={tech.icon} size={16} /></li>
+          ))}
+        </ul>
+
+        {project.links.length > 0 && (
+          <>
+            <h2>{t('work.links')}</h2>
+            <ul class="meta__links">
+              {project.links.map((link) => (
+                <li><Link url={link.url} blank>{link.label}</Link></li>
+              ))}
+            </ul>
+          </>
+        )}
+      </aside>
+    </div>
+
+    {project.slug === 'nova-design-system' && <ComponentShowcase />}
+
+    <footer class="next">
+      <Button href={localizePath('/work', locale)} type="ghost">{t('work.backToList')}</Button>
+      <Button href={localizePath(`/work/${next.slug}`, locale)} type="secondary">
+        {t('work.next')} : {next.name}
+      </Button>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .crumbs { padding-top: var(--nds-spacing-lg); }
+
+  .head {
+    display: grid;
+    justify-items: start;
+    gap: var(--nds-spacing-md);
+    padding-block: clamp(32px, 6vh, 64px) clamp(24px, 4vh, 48px);
+  }
+
+  .head__title {
+    @include type.text-5xl;
+    font-size: clamp(2rem, 5.5vw, 3.4rem);
+  }
+
+  .head__tagline {
+    @include type.text-lg;
+    font-weight: 400;
+    color: var(--nds-primary);
+    max-width: 60ch;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: clamp(24px, 5vw, 64px);
+    align-items: start;
+
+    @media (max-width: 840px) { grid-template-columns: 1fr; }
+  }
+
+  .body {
+    display: grid;
+    gap: var(--nds-spacing-md);
+
+    p {
+      @include type.text-base;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--nds-neutral);
+      max-width: 68ch;
+    }
+    h2 {
+      @include type.text-2xl;
+      margin-top: var(--nds-spacing-lg);
+    }
+  }
+
+  .highlights {
+    display: grid;
+    gap: var(--nds-spacing-xs);
+    margin: 0;
+    padding-left: 1.2em;
+
+    li {
+      @include type.text-base;
+      font-size: 1rem;
+      color: var(--nds-neutral);
+      &::marker { color: var(--nds-primary); }
+    }
+  }
+
+  .meta {
+    position: sticky;
+    top: 88px;
+    display: grid;
+    gap: var(--nds-spacing-md);
+    padding: var(--nds-spacing-lg);
+    background: color-mix(in srgb, var(--nds-surface) 88%, transparent);
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+
+    h2 {
+      @include type.text-label;
+      color: var(--nds-neutral);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    @media (max-width: 840px) { position: static; }
+  }
+
+  .meta__stack,
+  .meta__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .next {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--nds-spacing-md);
+    padding-block: clamp(40px, 7vh, 80px);
+  }
+</style>

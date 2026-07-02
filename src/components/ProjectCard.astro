@@ -1,104 +1,118 @@
 ---
-import { Card, Badge, Link } from '@unkn0wndo3s/nova-design-system';
-import { ArrowUpRight } from '@lucide/astro';
+import { Badge, Button } from '@unkn0wndo3s/nova-design-system';
 import TechIcon from './TechIcon.astro';
-import { statusMeta, type Project } from '../data/projects';
+import type { Project } from '../data/projects';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
 
 export interface Props {
   project: Project;
+  index?: number;
+  headingLevel?: 'h2' | 'h3';
 }
-const { project } = Astro.props;
-const status = statusMeta[project.status];
-const href = `/work/${project.slug}`;
+
+const { project, index, headingLevel: Heading = 'h3' } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const statusType = { live: 'success', maintained: 'info', wip: 'warning' } as const;
+const statusLabel = {
+  live: t('work.status.live'),
+  maintained: t('work.status.maintained'),
+  wip: t('work.status.wip'),
+} as const;
+
+const href = localizePath(`/work/${project.slug}`, locale);
 ---
 
-<article class="proj">
-  <Card title={project.title} subtitle={project.tagline}>
-    <div class="proj__meta">
-      <span class="proj__code">{project.designation}</span>
-      <Badge type={status.tone} variant="soft">{status.label}</Badge>
-    </div>
-    <p class="proj__summary">{project.summary}</p>
-    <div class="proj__stack" aria-label="Stack technique">
-      {
-        project.stack.map((s) => (
-          <span class="proj__chip" title={s.label}>
-            <TechIcon name={s.icon} size={15} />
-            {s.label}
-          </span>
-        ))
-      }
-    </div>
-    <div slot="footer" class="proj__footer">
-      <Link url={href}>
-        View project
-        <ArrowUpRight size={15} />
-      </Link>
-    </div>
-  </Card>
+<article class="project-card">
+  <header class="project-card__head">
+    {typeof index === 'number' && (
+      <span class="project-card__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+    )}
+    <Badge type={statusType[project.status]}>{statusLabel[project.status]}</Badge>
+  </header>
+
+  <Heading class="project-card__title">
+    <a href={href}>{project.name}</a>
+  </Heading>
+  <p class="project-card__tagline">{project.tagline[locale]}</p>
+  <p class="project-card__summary">{project.summary[locale]}</p>
+
+  <ul class="project-card__stack" aria-label={t('work.stack')}>
+    {project.stack.map((tech) => (
+      <li><TechIcon name={tech.name} icon={tech.icon} size={16} /></li>
+    ))}
+  </ul>
+
+  <footer class="project-card__footer">
+    <Button href={href} type="secondary" size="sm">{t('home.projects.view')}</Button>
+  </footer>
 </article>
 
 <style lang="scss">
-  @use 'styles/type' as *;
+  @use '../styles/type' as type;
 
-  .proj :global(.card) {
-    width: 100%;
-    height: 100%;
-    background: color-mix(in srgb, var(--nds-surface) 78%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-color: color-mix(in srgb, var(--nds-border) 90%, transparent);
-    transition:
-      transform 200ms ease,
-      border-color 200ms ease,
-      box-shadow 200ms ease;
-  }
-  .proj :global(.card:hover) {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--nds-primary) 45%, var(--nds-border));
-    box-shadow: var(--nds-shadow-lg);
-  }
-  .proj :global(.card__body) {
+  .project-card {
+    display: flex;
+    flex-direction: column;
     gap: var(--nds-spacing-sm);
     height: 100%;
+    padding: clamp(20px, 3vw, 32px);
+    background: color-mix(in srgb, var(--nds-surface) 88%, transparent);
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-xl);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover,
+    &:focus-within {
+      transform: translateY(-4px);
+      border-color: var(--nds-border-strong);
+      box-shadow: var(--nds-shadow-lg);
+    }
   }
 
-  .proj__meta {
+  .project-card__head {
     display: flex;
     align-items: center;
-    gap: var(--nds-spacing-sm);
+    justify-content: space-between;
   }
-  .proj__code {
+
+  .project-card__index {
     font-family: var(--nds-font-mono);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--nds-accent);
-  }
-  .proj__summary {
-    @include text-base;
     color: var(--nds-neutral);
-    margin: 0;
   }
-  .proj__stack {
+
+  .project-card__title {
+    @include type.text-2xl;
+
+    a {
+      color: var(--nds-text);
+      text-decoration: none;
+
+      &:hover { color: var(--nds-primary); }
+    }
+  }
+
+  .project-card__tagline {
+    @include type.text-lg;
+    color: var(--nds-primary);
+    font-weight: 500;
+  }
+
+  .project-card__summary {
+    @include type.text-base;
+    color: var(--nds-neutral);
+    flex: 1;
+  }
+
+  .project-card__stack {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nds-spacing-2xs);
-    margin-top: var(--nds-spacing-2xs);
+    gap: var(--nds-spacing-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  .proj__chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--nds-spacing-2xs);
-    padding: 3px var(--nds-spacing-xs);
-    border-radius: var(--nds-radius-full);
-    border: var(--nds-border-width-thin) solid var(--nds-border);
-    background: var(--nds-surface-2);
-    color: var(--nds-neutral);
-    font-family: var(--nds-font-mono);
-    font-size: 0.6875rem;
-  }
-  .proj__footer {
-    margin-top: auto;
-  }
+
+  .project-card__footer { margin-top: var(--nds-spacing-xs); }
 </style>

@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { Breadcrumb, BreadcrumbItem } from '@unkn0wndo3s/nova-design-system';
+import { projects } from '../data/projects';
+import { breadcrumbLd } from '../lib/seo';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const crumbs = [
+  { name: t('nav.home'), url: localizePath('/', locale) },
+  { name: t('nav.work'), url: localizePath('/work', locale) },
+];
+---
+
+<BaseLayout title={t('meta.work.title')} description={t('meta.work.description')} jsonLd={[breadcrumbLd(crumbs)]}>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <Breadcrumb>
+      <BreadcrumbItem href={crumbs[0]!.url}>{crumbs[0]!.name}</BreadcrumbItem>
+      <BreadcrumbItem current>{crumbs[1]!.name}</BreadcrumbItem>
+    </Breadcrumb>
+  </nav>
+
+  <header class="page-head">
+    <h1 class="page-title">{t('work.title')}</h1>
+    <p class="page-lead">{t('work.lead')}</p>
+  </header>
+
+  <div class="grid" data-belt-anchor>
+    {projects.map((project, i) => (
+      <ProjectCard project={project} index={i} headingLevel="h2" />
+    ))}
+  </div>
+</BaseLayout>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .crumbs { padding-top: var(--nds-spacing-lg); }
+
+  .page-head {
+    padding-block: clamp(32px, 6vh, 64px);
+    display: grid;
+    gap: var(--nds-spacing-md);
+  }
+
+  .page-title {
+    @include type.text-5xl;
+    font-size: clamp(2rem, 5.5vw, 3.4rem);
+  }
+
+  .page-lead {
+    @include type.text-lg;
+    font-weight: 400;
+    max-width: 60ch;
+    color: var(--nds-neutral);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: var(--nds-spacing-lg);
+    padding-bottom: var(--nds-spacing-2xl);
+  }
+</style>

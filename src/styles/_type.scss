@@ -1,5 +1,3 @@
-// Re-exports the official typography mixins from Nova DS.
-// The partial is resolved via a loadPath pointing to the package's 
-// style folder (its `exports` field prevents direct access to the subpath).
-// Usage in a component: @use "styles/type" as *; then @include text-3xl;
-@forward "tokens/typography";
+// Re-exports NDS typography mixins (text-sm ... text-5xl) + font vars.
+// The tokens directory is exposed through a Sass loadPath (see astro.config.mjs).
+@forward 'typography';

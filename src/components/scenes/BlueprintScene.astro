@@ -1,0 +1,238 @@
+---
+/**
+ * Custom scene for `portfolio` (this very site): from wireframe to product.
+ *
+ * A pinned browser-window blueprint whose strokes draw themselves as you
+ * scroll, then light up with the NDS accent - the site building itself.
+ * Reduced motion / no JS: fully drawn and lit, no pin.
+ */
+import Eyebrow from '../Eyebrow.astro';
+import { getLocaleFromUrl, useTranslations } from '../../i18n';
+import type { Localized } from '../../data/projects';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const captions: Localized[] = [
+  { fr: 'Structure : Astro, routes FR/EN, données typées.', en: 'Structure: Astro, FR/EN routes, typed data.' },
+  { fr: 'Habillage : chaque pixel vient des tokens du Nova Design System.', en: 'Skin: every pixel comes from Nova Design System tokens.' },
+  { fr: 'Mise en orbite : build statique, CI Gitea, déployé sur le VPS.', en: 'Into orbit: static build, Gitea CI, deployed on the VPS.' },
+];
+
+// Wireframe strokes in draw order (all use pathLength=1 for easy dash scrub).
+const strokes: { d: string; cls?: string }[] = [
+  { d: 'M 60 40 H 900 A 16 16 0 0 1 916 56 V 484 A 16 16 0 0 1 900 500 H 60 A 16 16 0 0 1 44 484 V 56 A 16 16 0 0 1 60 40 Z' }, // window
+  { d: 'M 44 88 H 916' }, // top bar divider
+  { d: 'M 76 64 a 8 8 0 1 0 0.01 0' },
+  { d: 'M 104 64 a 8 8 0 1 0 0.01 0' },
+  { d: 'M 132 64 a 8 8 0 1 0 0.01 0' },
+  { d: 'M 180 56 H 780 A 8 8 0 0 1 788 64 A 8 8 0 0 1 780 72 H 180 A 8 8 0 0 1 172 64 A 8 8 0 0 1 180 56 Z' }, // url bar
+  { d: 'M 92 150 H 420' }, // hero line 1
+  { d: 'M 92 186 H 560' }, // hero line 2 (big)
+  { d: 'M 92 222 H 340' }, // hero line 3
+  { d: 'M 92 262 H 208 A 10 10 0 0 1 218 272 V 286 A 10 10 0 0 1 208 296 H 92 A 10 10 0 0 1 82 286 V 272 A 10 10 0 0 1 92 262 Z', cls: 'accent' }, // CTA
+  { d: 'M 92 340 H 340 V 460 H 92 Z' }, // card 1
+  { d: 'M 366 340 H 614 V 460 H 366 Z' }, // card 2
+  { d: 'M 640 340 H 888 V 460 H 640 Z' }, // card 3
+  { d: 'M 640 140 a 70 70 0 1 0 0.01 0', cls: 'accent' }, // planet in hero
+  { d: 'M 610 210 q 100 -60 200 -12', cls: 'accent' }, // planet ring
+];
+---
+
+<section
+  class="bp"
+  data-blueprint
+  data-captions={JSON.stringify(captions.map((c) => c[locale]))}
+>
+  <div class="stage">
+    <header class="stage-head">
+      <Eyebrow>{t('scene.blueprint.eyebrow')}</Eyebrow>
+      <h2>{t('scene.blueprint.title')}</h2>
+    </header>
+
+    <svg viewBox="0 0 960 540" class="draw" role="img" aria-label={t('scene.blueprint.title')}>
+      <!-- Blueprint grid -->
+      <g class="grid" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, i) => <line x1={44 + i * 80} y1="40" x2={44 + i * 80} y2="500" />)}
+        {Array.from({ length: 7 }, (_, i) => <line x1="44" y1={40 + i * 78} x2="916" y2={40 + i * 78} />)}
+      </g>
+
+      {strokes.map((s, i) => (
+        <path d={s.d} pathLength="1" class:list={['stroke', s.cls]} data-draw={i} />
+      ))}
+
+      <!-- Lit state: soft fills that fade in at the end -->
+      <g class="lit" data-lit aria-hidden="true">
+        <rect x="82" y="262" width="136" height="34" rx="10" />
+        <circle cx="640" cy="210" r="70" />
+        <rect x="92" y="340" width="248" height="120" class="dim" />
+        <rect x="366" y="340" width="248" height="120" class="dim" />
+        <rect x="640" y="340" width="248" height="120" class="dim" />
+      </g>
+
+      <text x="480" y="70" text-anchor="middle" class="url" data-url>louis-potevin.dev</text>
+    </svg>
+
+    <p class="caption" data-caption aria-live="polite">{captions[0]![locale]}</p>
+    <p class="hint" aria-hidden="true">{t('scene.hint')}</p>
+  </div>
+</section>
+
+<script>
+  import { scrub, window01 } from '../../lib/scrub';
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-blueprint]');
+    if (!root) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('static');
+      return;
+    }
+    root.classList.add('is-ready');
+
+    const paths = Array.from(root.querySelectorAll<SVGPathElement>('[data-draw]'));
+    const lit = root.querySelector<SVGGElement>('[data-lit]')!;
+    const url = root.querySelector<SVGTextElement>('[data-url]')!;
+    const captionEl = root.querySelector<HTMLElement>('[data-caption]')!;
+    const captions: string[] = JSON.parse(root.dataset.captions ?? '[]');
+
+    scrub(root, (p) => {
+      // Strokes draw over the first 68%, staggered.
+      paths.forEach((el, i) => {
+        const a = 0.03 + (i / paths.length) * 0.6;
+        el.style.strokeDashoffset = String(1 - window01(p, a, a + 0.1));
+      });
+      // Then the interface lights up.
+      const glow = window01(p, 0.7, 0.92);
+      lit.style.opacity = String(glow * 0.9);
+      url.style.opacity = String(window01(p, 0.32, 0.42));
+      root.style.setProperty('--bp-glow', String(glow));
+
+      const idx = p < 0.34 ? 0 : p < 0.7 ? 1 : 2;
+      if (captionEl.dataset.idx !== String(idx)) {
+        captionEl.dataset.idx = String(idx);
+        captionEl.style.opacity = '0';
+        window.setTimeout(() => {
+          captionEl.textContent = captions[idx]!;
+          captionEl.style.opacity = '1';
+        }, 180);
+      }
+    });
+  }
+
+  init();
+</script>
+
+<style lang="scss">
+  @use '../../styles/type' as type;
+
+  .bp {
+    margin-block: clamp(40px, 8vh, 96px);
+
+    &.is-ready {
+      height: 280vh;
+    }
+  }
+
+  .stage {
+    display: grid;
+    gap: var(--nds-spacing-lg);
+    justify-items: center;
+    padding-block: var(--nds-spacing-xl);
+
+    .is-ready & {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      align-content: center;
+    }
+  }
+
+  .stage-head {
+    display: grid;
+    gap: var(--nds-spacing-xs);
+    justify-items: center;
+    text-align: center;
+
+    h2 {
+      @include type.text-3xl;
+      color: var(--nds-text);
+    }
+  }
+
+  .draw {
+    width: min(880px, 100%);
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(0 0 calc(var(--bp-glow, 0) * 14px) color-mix(in srgb, var(--nds-accent) 40%, transparent));
+  }
+
+  .grid line {
+    stroke: color-mix(in srgb, var(--nds-primary) 12%, transparent);
+    stroke-width: 0.5;
+  }
+
+  .stroke {
+    fill: none;
+    stroke: var(--nds-primary);
+    stroke-width: 1.6;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    stroke-linecap: round;
+
+    &.accent {
+      stroke: var(--nds-accent);
+    }
+  }
+
+  .lit {
+    opacity: 0;
+
+    rect,
+    circle {
+      fill: color-mix(in srgb, var(--nds-accent) 30%, transparent);
+    }
+    .dim {
+      fill: color-mix(in srgb, var(--nds-primary) 14%, transparent);
+    }
+  }
+
+  .url {
+    @include type.text-label;
+    fill: var(--nds-neutral);
+    font-family: var(--nds-font-mono);
+    font-size: 13px;
+    opacity: 0;
+  }
+
+  .caption {
+    @include type.text-base;
+    min-height: 3em;
+    max-width: 60ch;
+    text-align: center;
+    color: var(--nds-neutral);
+    transition: opacity 0.18s ease;
+  }
+
+  .hint {
+    @include type.text-sm;
+    color: var(--nds-disabled);
+
+    .static & {
+      display: none;
+    }
+  }
+
+  /* Static fallback: fully drawn and lit. */
+  .bp:not(.is-ready) {
+    .stroke {
+      stroke-dashoffset: 0;
+    }
+    .lit {
+      opacity: 0.9;
+    }
+    .url {
+      opacity: 1;
+    }
+  }
+</style>

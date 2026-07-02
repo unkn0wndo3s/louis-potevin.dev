@@ -1,94 +1,96 @@
-# louis-potevin.dev
+# louis-potevin.dev — Portfolio v2
 
-Professional portfolio of **Louis Potevin** - full-stack developer.
-Static multi-page website built with **Astro + TypeScript + Sass**, styled
-**exclusively** by the in-house design system **`@unkn0wndo3s/nova-design-system`**
-(tokens, components), featuring a 3D space background controlled via scrolling.
+Portfolio bilingue (FR/EN) construit avec **Astro 7**, **Nova Design System**, **Three.js** et **Lenis**.
+Accueil = un « voyage » : le scroll ne fait jamais défiler une page, il pilote une caméra 3D
+et l'animation continue. Chaque projet a sa propre scène sur-mesure.
 
----
+## Stack
 
-## Getting Started
+- [Astro 7](https://astro.build) — SSG, i18n natif, zéro JS par défaut
+- [`@unkn0wndo3s/nova-design-system`](https://www.npmjs.com/package/@unkn0wndo3s/nova-design-system) — composants + tokens (source unique du design)
+- [Three.js](https://threejs.org) — le moteur du voyage (accueil)
+- [Lenis](https://lenis.darkroom.engineering) — smooth scroll ; toutes les animations lisent le scroll depuis Lenis, d'où la sensation d'une seule courbe de mouvement
+- Sass — les mixins typographiques NDS sont exposés via un `loadPath` (voir `astro.config.mjs`)
+
+## Démarrer
 
 ```bash
-npm install
-npm run dev      # dev server       → http://localhost:4321
-npm run build    # static build     → ./dist
-npm run preview  # preview the build
+npm install        # .npmrc force legacy-peer-deps (requis par @lucide/astro avec Astro 7)
+npm run dev        # http://localhost:4321
+npm run build      # sortie statique dans dist/
+npm run check      # astro check (TS + diagnostics) - 0 erreur attendu
 ```
 
-> **Installation Note.** `@lucide/astro` has not yet declared its
-compatibility with Astro 7 in its `peerDependencies`. The **`.npmrc`**
-> file therefore enables `legacy-peer-deps=true` so that `npm install` succeeds.
-> Functionality is not affected.
-
----
+Node >= 22.12 (contrainte du NDS).
 
 ## Structure
 
 ```
 src/
-├─ data/
-│  ├─ site.ts            # profile + links (single source of truth)
-│  └─ projects.ts        # project content
-├─ layouts/
-│  └─ BaseLayout.astro   # NDS styles + 3D background + nav + footer + HUD
-├─ components/
-│  ├─ scene/scene.ts     # Three.js background (stars, nebula, ambient asteroid)
-│  ├─ SpaceBackground.astro
-│  ├─ ProjectCard.astro  # project card (NDS Card component)
-│  ├─ SiteNav / SiteFooter / Eyebrow / TechIcon / BrandLinkedin
-└─ pages/
-   ├─ index.astro        # home
-   ├─ work/index.astro   # all projects
-   ├─ work/[slug].astro  # project details (getStaticPaths)
-   ├─ about.astro
-   └─ contact.astro
+├── data/          site.ts (profil, liens), projects.ts (projets localisés + stages du showcase NDS)
+├── i18n/          index.ts (helpers locale/chemins/hreflang), ui.ts (dictionnaires FR/EN)
+├── lib/seo.ts     JSON-LD : Person, WebSite, BreadcrumbList, SoftwareSourceCode, ProfilePage
+├── lib/smooth.ts  Singleton Lenis · lib/scrub.ts - progression 0..1 des scènes épinglées
+├── layouts/       BaseLayout.astro (head SEO complet, nav, footer, init Lenis)
+├── components/
+│   ├── scene/     voyage.ts - moteur de l'accueil · scene.ts - fond ambiant des sous-pages
+│   ├── scenes/    InfraScene, BlueprintScene, SorterScene - scènes projet sur-mesure
+│   └── showcase/  ComponentShowcase.astro - composants NDS "volants" (page projet NDS)
+├── views/         La logique de chaque page (partagée entre locales)
+└── pages/         Routes minces : / (FR, défaut) et /en/* (miroirs)
 ```
 
-## Design system
+**Règle i18n** : une page = une view. Les routes (`pages/` et `pages/en/`) ne font
+qu'importer la view ; la locale est déduite de l'URL (`getLocaleFromUrl`).
+`/` = français (cible : recruteurs FR), `/en/` = anglais. Pour inverser, changer
+`DEFAULT_LOCALE` dans `src/i18n/index.ts` **et** `i18n.defaultLocale` dans `astro.config.mjs`.
 
-Components come from `@unkn0wndo3s/nova-design-system` :
-`import { Button, Card, Badge, Navbar, Breadcrumb, TextField, Select, ... }`.
-Global styles and tokens : `import '@unkn0wndo3s/nova-design-system/styles'`
-(done once in `BaseLayout.astro`).
+## Le voyage (accueil)
 
-The package ships its raw `.astro`/`.scss` source files - Astro compiles them
-on the consumer side. Since its `exports` field does not publish token partials
-individually, the typography partial is exposed via a Sass
-`loadPath` (see `astro.config.mjs`) and then re-exported by
-`src/styles/_type.scss` (mixins `text-sm` … `text-5xl`).
+`voyage.ts` transforme la hauteur de scroll en **timeline** : les sections HTML sont des
+overlays fixes, et le scroll avance une caméra sur une courbe Catmull-Rom à travers
+nébuleuses, ceinture d'astéroïdes (une balise lumineuse par projet) et portail final.
 
-Icons : `@lucide/astro` (UI) and `simple-icons-astro` (tech). Since LinkedIn is
-no longer distributed by either of them (trademark policy), its glyph is provided
-locally in `BrandLinkedin.astro`.
+- **Scroll down** → les astéroïdes dérivent et se percutent (collisions élastiques,
+  étincelles additives).
+- **Scroll up** → **vortex gravitationnel** : spirale vers la formation d'origine.
+- Barre de progression + points de navigation latéraux (clic = seek animé).
+- Les ancres (`/#about`, `/#contact`…) deviennent des seeks sur la timeline.
+- Progressive enhancement : le même markup rend une page normale empilée sans JS,
+  sans WebGL ou avec `prefers-reduced-motion` (la classe `html.cinema` n'est jamais posée).
 
-## 3D Background
+## /docs — la documentation technique
 
-An ambient asteroid slowly rotates and floats in the background, in the middle of a
-starfield and a discrete nebula (Three.js). It does not follow scroll actions
-and produces no engine flame effects: it is a backdrop, not the subject.
+Une page dédiée (`/docs`, FR/EN) documente tout le fonctionnement du site en 13 chapitres,
+avec sommaire sticky (scrollspy) et snippets **extraits du vrai code source au build**
+(imports Vite `?raw` + découpe par marqueurs — si un marqueur disparaît, le build échoue
+au lieu de publier une doc périmée). Coloration syntaxique Shiki via `astro:components`.
 
-- **Without WebGL** : the canvas hides cleanly, the site remains readable.
+## Scènes projet sur-mesure
+
+Toutes épinglées (section haute + stage sticky), pilotées par `scrub.ts`, fallback statique :
+
+| Projet | Scène |
+| --- | --- |
+| nova-design-system | `ComponentShowcase` (« la forge ») — 3 actes : les tokens (vrais swatches) convergent, 8 vrais composants NDS défilent dans un tunnel 3D avec specs + snippet d'usage, la bibliothèque se fige en grille avec compteurs |
+| nova-infra | `InfraScene` — le graphe Visiteur → Cloudflare → Apache/VPS se dessine au scroll, puis un paquet circule en continu |
+| portfolio | `BlueprintScene` — le wireframe du site se trace (dashoffset) puis s'allume aux couleurs NDS |
+| file-organizer | `SorterScene` — 20 fichiers éparpillés (seed déterministe) se rangent en colonnes au scroll |
 
 ## SEO
 
-Meticulous search engine optimization, pre-configured:
+- `hreflang` fr / en / x-default + canonical sur chaque page
+- JSON-LD : `Person` (@id partagé), `WebSite`, `BreadcrumbList` par page,
+  `SoftwareSourceCode` par projet, `ProfilePage` sur /about
+- Open Graph + Twitter cards localisés (`og-fr.png` / `og-en.png`)
+- Sitemap i18n (`@astrojs/sitemap`) + `robots.txt`
+- Pas de meta `keywords` (ignorées par Google, signal spam pour certains crawlers)
 
-- Per-page metadata (title, description, keywords), canonical URLs;
-- Open Graph + Twitter Card with `public/og.png` (1200×630) ;
-- Structured data JSON-LD (`Person` + `WebSite`) ;
-- `sitemap-index.xml` (via `@astrojs/sitemap`) + `public/robots.txt`.
+## À faire côté déploiement
 
-Remember to update `og.png` if you change your job title, and confirm the
-links in `site.ts` (used in the `sameAs` property of the structured data).
-
-## Contact Form
-
-The site is 100% static: the form in `contact.astro` does not have a
-backend. The **Send** button opens the user's mail client with a
-pre-filled message (`mailto:`). For a server-side submission, connect a service
-(Formspree, Resend, edge function…) to the `#cf-send` button.
-
----
-
-Built with Astro + Nova Design System.
+1. **`public/og-fr.png` et `public/og-en.png`** (1200×630) — visuels de partage.
+2. Brancher le workflow **Gitea Actions** existant (`npm ci && npm run build`, publier `dist/`).
+3. `/about` et `/contact` redirigent vers `/#about` et `/#contact` (config Astro) —
+   les anciennes URL indexées ne cassent pas.
+4. Tester le voyage sur un vrai GPU/trackpad et ajuster les poids `data-weight`
+   des sections dans `HomeView.astro` (durée relative de chaque étape).

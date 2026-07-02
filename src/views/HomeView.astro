@@ -1,0 +1,547 @@
+---
+/**
+ * Home = the voyage. One long timeline: hero → profile → asteroid belt with a
+ * beacon per project → stack constellation → contact portal.
+ *
+ * Two rendering modes from the same markup:
+ *  - default (no JS, no WebGL, reduced motion): normal stacked sections
+ *  - `html.cinema` (set by voyage.ts): sections become fixed overlays,
+ *    the wrapper's height becomes the scroll timeline.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Eyebrow from '../components/Eyebrow.astro';
+import TechIcon from '../components/TechIcon.astro';
+import BrandLinkedin from '../components/BrandLinkedin.astro';
+import { Copy, ChevronDown } from '@lucide/astro';
+import { Github, Gitea, Npm } from 'simple-icons-astro';
+import { Badge, Button } from '@unkn0wndo3s/nova-design-system';
+import { site, stack } from '../data/site';
+import { featuredProjects, projects, type Project } from '../data/projects';
+import { breadcrumbLd, profilePageLd } from '../lib/seo';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+const voyageProjects: Project[] = [...featuredProjects, ...projects.filter((p) => !p.featured)];
+const statusType = { live: 'success', maintained: 'info', wip: 'warning' } as const;
+const statusLabel = {
+  live: t('work.status.live'),
+  maintained: t('work.status.maintained'),
+  wip: t('work.status.wip'),
+} as const;
+
+const pillars = [
+  { title: t('home.profile.front.title'), body: t('home.profile.front.body') },
+  { title: t('home.profile.back.title'), body: t('home.profile.back.body') },
+  { title: t('home.profile.ops.title'), body: t('home.profile.ops.body') },
+];
+
+const dots = ['hero', 'about', 'projects', ...voyageProjects.map((p) => `p-${p.slug}`), 'stack', 'contact'];
+---
+
+<BaseLayout
+  title={t('meta.home.title')}
+  description={t('meta.home.description')}
+  jsonLd={[breadcrumbLd([{ name: t('nav.home'), url: localizePath('/', locale) }]), profilePageLd(new URL(Astro.url.pathname, Astro.site ?? 'https://louis-potevin.dev').href)]}
+  background={false}
+  fullBleed
+>
+  <canvas class="voyage-canvas" data-voyage-canvas aria-hidden="true"></canvas>
+
+  <div class="voyage" data-voyage>
+    <!-- 01 · Hero -->
+    <section class="seg seg--center" data-seg="hero" data-weight="1.1" id="hero">
+      <div class="card card--hero">
+        <p class="hero-avail"><Badge type="success" variant="soft">{t('avail.badge')}</Badge> <span>{t('avail.line')}</span></p>
+        <h1 class="hero-title">
+          <span class="hero-name">{site.name}</span>
+          <span class="hero-role">{t('home.hero.title.role')}</span>
+        </h1>
+        <p class="hero-lead">{t('home.hero.lead')}</p>
+        <div class="row">
+          <Button type="primary" href={localizePath('/#projects', locale)}>{t('home.hero.viewProjects')}</Button>
+          <Button type="ghost" href={localizePath('/#contact', locale)}>{t('home.hero.contact')}</Button>
+        </div>
+        <p class="hero-hint" aria-hidden="true"><ChevronDown size={16} /> {t('voyage.hint')}</p>
+      </div>
+    </section>
+
+    <!-- 02 · Profil -->
+    <section class="seg seg--left" data-seg="about" data-weight="1.3" data-side="left" id="about">
+      <div class="card">
+        <Eyebrow>{t('home.profile.eyebrow')}</Eyebrow>
+        <h2 class="card-title">{t('home.profile.title')}</h2>
+        <p class="card-body">{t('home.profile.body1')}</p>
+        <p class="card-body card-body--muted">{t('home.about.summary')}</p>
+        <ul class="pillars">
+          {pillars.map((p) => (
+            <li><strong>{p.title}</strong><span>{p.body}</span></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <!-- 03 · Cap sur les projets -->
+    <section class="seg seg--center" data-seg="projects" data-weight="0.7" id="projects">
+      <div class="card card--center">
+        <Eyebrow>{t('home.projects.eyebrow')}</Eyebrow>
+        <h2 class="card-title card-title--big">{t('home.projects.intro.title')}</h2>
+        <p class="card-body">{t('home.projects.intro.body')}</p>
+        <div class="row row--center">
+          <Button type="secondary" href={localizePath('/work', locale)}>{t('home.projects.all')}</Button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04-07 · Un segment par projet, cartes alternées -->
+    {voyageProjects.map((p, i) => (
+      <section
+        class={`seg seg--${i % 2 ? 'left' : 'right'}`}
+        data-seg={`p-${p.slug}`}
+        data-weight="1.15"
+        data-side={i % 2 ? 'left' : 'right'}
+        data-project
+        id={`p-${p.slug}`}
+      >
+        <article class="card card--project">
+          <p class="proj-index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</p>
+          <div class="proj-head">
+            <Badge type={statusType[p.status]}>{statusLabel[p.status]}</Badge>
+          </div>
+          <h2 class="card-title">{p.name}</h2>
+          <p class="card-body">{p.tagline[locale]}</p>
+          <ul class="proj-highlights">
+            {p.highlights.slice(0, 2).map((h) => <li>{h[locale]}</li>)}
+          </ul>
+          <div class="row">
+            <Button type="primary" href={localizePath(`/work/${p.slug}`, locale)}>
+              {t('home.projects.view')}
+            </Button>
+          </div>
+        </article>
+      </section>
+    ))}
+
+    <!-- 08 · Stack -->
+    <section class="seg seg--center" data-seg="stack" data-weight="1.05" id="stack">
+      <div class="card card--center card--wide">
+        <Eyebrow>{t('home.stack.eyebrow')}</Eyebrow>
+        <h2 class="card-title">{t('home.stack.title')}</h2>
+        <ul class="stack-grid">
+          {stack.map((s) => <li><TechIcon name={s.name} icon={s.icon} /></li>)}
+        </ul>
+      </div>
+    </section>
+
+    <!-- 09 · Contact (arrivée au portail) -->
+    <section class="seg seg--center" data-seg="contact" data-weight="1.2" id="contact">
+      <div class="card card--center">
+        <Eyebrow>{t('contact.title')}</Eyebrow>
+        <h2 class="card-title card-title--big">{t('home.cta.title')}</h2>
+        <p class="card-body">{t('home.cta.body')}</p>
+        <div class="row row--center">
+          <Button type="primary" href={`mailto:${site.email}`}>{t('contact.email.write')}</Button>
+          <Button type="ghost" htmlType="button" data-copy-email data-copied-label={t('contact.email.copied')}>
+            <Copy size={16} />
+            <span data-copy-label>{t('contact.email.copy')}</span>
+          </Button>
+        </div>
+        <p class="contact-email" data-email-text>{site.email}</p>
+        <nav class="socials" aria-label="Social">
+          <a href={site.links.github.url} target="_blank" rel="me noopener"><Github size={20} aria-hidden="true" /><span class="sr-only">GitHub</span></a>
+          <a href={site.links.gitea.url} target="_blank" rel="me noopener"><Gitea size={20} aria-hidden="true" /><span class="sr-only">Gitea</span></a>
+          <a href={site.links.npm.url} target="_blank" rel="me noopener"><Npm size={20} aria-hidden="true" /><span class="sr-only">npm</span></a>
+          <a href={site.links.linkedin.url} target="_blank" rel="me noopener"><BrandLinkedin size={20} /><span class="sr-only">LinkedIn</span></a>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+  <!-- Timeline UI (cinema mode only) -->
+  <div class="rail" aria-hidden="true">
+    <div class="rail__bar" data-voyage-progress></div>
+  </div>
+  <nav class="dots" aria-label={t('voyage.progress')}>
+    {dots.map((id) => <button type="button" data-voyage-dot={id} aria-label={id}></button>)}
+  </nav>
+</BaseLayout>
+
+<script>
+  import { ensureSmooth } from '../lib/smooth';
+  import type { VoyageHandle } from '../components/scene/voyage';
+
+  let handle: VoyageHandle | null = null;
+
+  async function init() {
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-voyage-canvas]');
+    const container = document.querySelector<HTMLElement>('[data-voyage]');
+    if (!canvas || !container) return;
+
+    const lenis = ensureSmooth();
+    if (!lenis) return; // reduced motion → static page, canvas stays hidden
+
+    // Three.js only downloads when the cinema mode is actually possible.
+    const { mountVoyage } = await import('../components/scene/voyage');
+    handle = mountVoyage({ canvas, container, lenis });
+    if (!handle) return; // no WebGL → static page
+
+    // Deep links (/#about, nav anchors...) become smooth seeks on the timeline.
+    if (location.hash) handle.seek(location.hash.slice(1), true);
+    document.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href*="#"]');
+      if (!a || !handle) return;
+      if (a.pathname !== location.pathname) return;
+      const id = a.hash.slice(1);
+      e.preventDefault();
+      history.replaceState(null, '', a.hash);
+      handle.seek(id);
+    });
+  }
+
+  function initCopy() {
+    const btn = document.querySelector<HTMLButtonElement>('[data-copy-email]');
+    const label = btn?.querySelector<HTMLElement>('[data-copy-label]');
+    const email = document.querySelector<HTMLElement>('[data-email-text]')?.textContent?.trim() ?? '';
+    btn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(email);
+        if (label && btn.dataset.copiedLabel) {
+          const orig = label.textContent;
+          label.textContent = btn.dataset.copiedLabel;
+          window.setTimeout(() => (label.textContent = orig), 1800);
+        }
+      } catch {
+        /* clipboard unavailable - the address stays readable as text */
+      }
+    });
+  }
+
+  init();
+  initCopy();
+</script>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  /* ---------- Canvas & timeline chrome (hidden until cinema mode) --------- */
+  .voyage-canvas {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  .rail,
+  .dots {
+    display: none;
+  }
+
+  :global(html.cinema) .voyage-canvas {
+    display: block;
+  }
+  :global(html.cinema) .rail {
+    display: block;
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    z-index: 60;
+    background: color-mix(in srgb, var(--nds-border) 60%, transparent);
+
+    .rail__bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--nds-primary), var(--nds-accent));
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+  }
+  :global(html.cinema) .dots {
+    position: fixed;
+    right: clamp(10px, 2vw, 26px);
+    top: 50%;
+    translate: 0 -50%;
+    z-index: 60;
+    display: grid;
+    gap: 10px;
+
+    button {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      border: 1px solid var(--nds-neutral);
+      border-radius: var(--nds-radius-full);
+      background: transparent;
+      cursor: pointer;
+      transition: background-color 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+
+      &.is-active {
+        background: var(--nds-accent);
+        border-color: var(--nds-accent);
+        transform: scale(1.35);
+      }
+      &:hover {
+        border-color: var(--nds-text);
+      }
+    }
+    @media (max-width: 840px) {
+      display: none;
+    }
+  }
+
+  /* ------------------------- Sections: static default --------------------- */
+  .seg {
+    position: relative;
+    z-index: 10;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    padding-inline: clamp(20px, 6vw, 72px);
+
+    &.seg--center {
+      justify-content: center;
+      text-align: center;
+    }
+    &.seg--right {
+      justify-content: flex-end;
+    }
+  }
+
+  /* Cinema: fixed overlays, driven per-frame by voyage.ts */
+  :global(html.cinema) .seg {
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity, transform;
+
+    &.is-active {
+      pointer-events: auto;
+    }
+  }
+
+  /* ------------------------------- Cards ---------------------------------- */
+  .card {
+    display: grid;
+    gap: var(--nds-spacing-md);
+    justify-items: start;
+    width: min(600px, 94vw);
+    padding: clamp(var(--nds-spacing-lg), 3vw, var(--nds-spacing-2xl));
+    background: color-mix(in srgb, var(--nds-background) 62%, transparent);
+    border: 1px solid color-mix(in srgb, var(--nds-border) 80%, transparent);
+    border-radius: var(--nds-radius-lg);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--nds-shadow-md);
+  }
+  .card--center {
+    justify-items: center;
+    text-align: center;
+  }
+  .card--wide {
+    width: min(780px, 94vw);
+  }
+  .card--hero {
+    width: min(860px, 94vw);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nds-spacing-sm);
+  }
+  .row--center {
+    justify-content: center;
+  }
+
+  .card-title {
+    @include type.text-3xl;
+    margin: 0;
+    color: var(--nds-text);
+    text-wrap: balance;
+  }
+  .card-title--big {
+    @include type.text-4xl;
+  }
+  .card-body {
+    @include type.text-base;
+    margin: 0;
+    max-width: 56ch;
+    color: var(--nds-neutral);
+  }
+  .card-body--muted {
+    color: var(--nds-disabled);
+  }
+
+  /* Hero */
+  .hero-avail {
+    @include type.text-sm;
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-sm);
+    margin: 0;
+    color: var(--nds-neutral);
+  }
+  .hero-title {
+    display: grid;
+    gap: var(--nds-spacing-2xs);
+    margin: 0;
+  }
+  .hero-name {
+    @include type.text-5xl;
+    color: var(--nds-text);
+    letter-spacing: -0.01em;
+  }
+  .hero-role {
+    @include type.text-xl;
+    color: var(--nds-accent);
+  }
+  .hero-lead {
+    @include type.text-lg;
+    margin: 0;
+    max-width: 58ch;
+    color: var(--nds-neutral);
+  }
+  .hero-hint {
+    @include type.text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-2xs);
+    margin: var(--nds-spacing-lg) 0 0;
+    color: var(--nds-disabled);
+    animation: hint 2.4s ease-in-out infinite;
+  }
+  @keyframes hint {
+    0%, 100% { transform: translateY(0); opacity: 0.7; }
+    50% { transform: translateY(6px); opacity: 1; }
+  }
+
+  /* Profil */
+  .pillars {
+    display: grid;
+    gap: var(--nds-spacing-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      gap: 2px;
+      padding-left: var(--nds-spacing-md);
+      border-left: 2px solid var(--nds-primary);
+
+      strong {
+        @include type.text-label;
+        color: var(--nds-text);
+      }
+      span {
+        @include type.text-sm;
+        color: var(--nds-neutral);
+      }
+    }
+  }
+
+  /* Projets */
+  .card--project {
+    position: relative;
+  }
+  .proj-index {
+    @include type.text-5xl;
+    position: absolute;
+    top: -0.55em;
+    right: var(--nds-spacing-lg);
+    margin: 0;
+    color: color-mix(in srgb, var(--nds-accent) 26%, transparent);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+  .proj-highlights {
+    display: grid;
+    gap: var(--nds-spacing-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      @include type.text-sm;
+      color: var(--nds-neutral);
+      padding-left: var(--nds-spacing-md);
+      position: relative;
+
+      &::before {
+        content: '◆';
+        position: absolute;
+        left: 0;
+        color: var(--nds-accent);
+        font-size: 0.6em;
+        top: 0.45em;
+      }
+    }
+  }
+
+  /* Stack */
+  .stack-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--nds-spacing-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Contact */
+  .contact-email {
+    @include type.text-base;
+    margin: 0;
+    color: var(--nds-primary);
+    word-break: break-all;
+  }
+  .socials {
+    display: flex;
+    gap: var(--nds-spacing-md);
+
+    a {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--nds-border);
+      border-radius: var(--nds-radius-full);
+      color: var(--nds-text);
+      transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+
+      &:hover {
+        color: var(--nds-accent);
+        border-color: var(--nds-accent);
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 840px) {
+    .seg,
+    .seg.seg--right {
+      justify-content: center;
+    }
+    .proj-index {
+      right: var(--nds-spacing-md);
+    }
+  }
+</style>

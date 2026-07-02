@@ -1,187 +1,254 @@
-// Projects - real content. Edit freely.
-// `icon` matches a simple-icons-astro component (using PascalCase elsewhere).
+import type { Locale } from '../i18n';
 
-export type ProjectStatus = 'live' | 'maintained' | 'archived' | 'r&d';
+/** A string localized in both site languages. */
+export type Localized = Record<Locale, string>;
+
+export type ProjectStatus = 'live' | 'maintained' | 'wip';
 
 export interface ProjectLink {
   label: string;
   url: string;
-  icon?: string;
 }
 
 export interface Project {
   slug: string;
-  designation: string; // catalog index, e.g. "01"
-  title: string;
-  tagline: string;
-  period: string;
-  role: string;
+  name: string;
   status: ProjectStatus;
-  featured: boolean;
-  summary: string;
-  context: string[];
-  contributions: string[];
-  stack: { icon: string; label: string }[];
+  tagline: Localized;
+  summary: Localized;
+  /** Long-form body, one paragraph per entry. */
+  body: Localized[];
+  highlights: Localized[];
+  stack: { name: string; icon: string }[];
   links: ProjectLink[];
+  featured: boolean;
 }
 
 export const projects: Project[] = [
   {
     slug: 'nova-design-system',
-    designation: '01',
-    title: 'Nova Design System',
-    tagline: 'Astro component library - tokens, accessibility, npm distribution.',
-    period: '2026 - ongoing',
-    role: 'Author · maintainer',
+    name: 'Nova Design System',
     status: 'maintained',
     featured: true,
-    summary:
-      'A library of 29 Astro components across six families, with a complete token system (color, typography, spacing, radius) and a light/dark theme driven by CSS variables. Currently at version 1.2.1, it powers this portfolio and will be progressively adapted to my other projects, including outside the Astro ecosystem (a GPUI/Rust binding is planned for File Organizer).',
-    context: [
-      'Designed for clean, technical interfaces: mono fonts for headings, sans-serif for body text.',
-      'Distributed under the npm scope @unkn0wndo3s, published automatically via a CI pipeline.',
-      'License: free to use, resale of the design system as a standalone product is prohibited.',
-      'Adoption is currently internal: the download spikes seen on npm in the days after each release are mostly bot/CI traffic rather than organic external adoption so far.',
+    tagline: {
+      fr: 'Bibliothèque de composants Astro - tokens, accessibilité, distribution npm.',
+      en: 'Astro component library - tokens, accessibility, npm distribution.',
+    },
+    summary: {
+      fr: "29 composants Astro répartis en six familles, un système complet de tokens (couleur, typographie, espacement, rayons) et un thème clair/sombre piloté par variables CSS. Publié sur npm en v1.2.1, il propulse ce portfolio.",
+      en: 'A library of 29 Astro components across six families, a complete token system (color, typography, spacing, radius) and a light/dark theme driven by CSS variables. Published on npm at v1.2.1, it powers this portfolio.',
+    },
+    body: [
+      {
+        fr: "Nova Design System est né d'un besoin simple : arrêter de réécrire les mêmes boutons, champs et modales d'un projet à l'autre. Chaque composant est développé avec son interface TypeScript, ses états (hover, focus, disabled) et ses styles isolés en SCSS.",
+        en: 'Nova Design System started from a simple need: stop rewriting the same buttons, fields and modals from one project to the next. Every component ships with its TypeScript interface, its states (hover, focus, disabled) and isolated SCSS styles.',
+      },
+      {
+        fr: "La distribution se fait via npm (paquet public `@unkn0wndo3s/nova-design-system`), avec une CI Gitea Actions auto-hébergée qui vérifie, versionne et publie chaque release en 10 à 20 secondes. Le paquet livre ses sources `.astro`/`.scss` brutes, compilées côté consommateur.",
+        en: 'Distribution happens through npm (public package `@unkn0wndo3s/nova-design-system`), with a self-hosted Gitea Actions CI that checks, versions and publishes each release in 10 to 20 seconds. The package ships raw `.astro`/`.scss` sources, compiled on the consumer side.',
+      },
+      {
+        fr: "La suite : adapter progressivement NDS à mes autres projets, y compris hors de l'écosystème Astro - un binding GPUI/Rust est prévu pour File Organizer.",
+        en: 'Next up: progressively adapting NDS to my other projects, including outside the Astro ecosystem - a GPUI/Rust binding is planned for File Organizer.',
+      },
     ],
-    contributions: [
-      'Architecture of tokens and components (Custom Elements, typed events, slots).',
-      'Gitea Actions CI/CD pipeline for automated npm publishing: checkout, version check, install, publish — about 19s end to end.',
-      'Current documentation: component list and status at nds.louis-potevin.dev, with technical usage docs coming next.',
-      '6-12 month roadmap: automatic component export on every release, new components, complete documentation. Longer term (12+ months): ports to Vue.js, React, Svelte, Java, and a Rust package, with docs kept up to date for each target.',
+    highlights: [
+      { fr: '29 composants exportés, six familles', en: '29 exported components, six families' },
+      { fr: 'Tokens couleur / typo / espacement / rayons, thème clair-sombre', en: 'Color / type / spacing / radius tokens, light-dark theme' },
+      { fr: 'CI/CD Gitea Actions auto-hébergée, publication npm en ~15 s', en: 'Self-hosted Gitea Actions CI/CD, npm publish in ~15 s' },
+      { fr: 'Licence maison : usage libre, monétisation du DS interdite', en: 'Custom license: free to use, monetizing NDS itself prohibited' },
     ],
     stack: [
-      { icon: 'astro', label: 'Astro' },
-      { icon: 'typescript', label: 'TypeScript' },
-      { icon: 'sass', label: 'Sass' },
-      { icon: 'gitea', label: 'Gitea CI' },
+      { name: 'Astro', icon: 'Astro' },
+      { name: 'TypeScript', icon: 'Typescript' },
+      { name: 'Sass', icon: 'Sass' },
+      { name: 'Gitea CI', icon: 'Gitea' },
+      { name: 'npm', icon: 'Npm' },
     ],
     links: [
-      { label: 'Nova Design System v1.2.1', url: 'https://nds.louis-potevin.dev/', icon: 'astro' },
-      { label: 'npm', url: 'https://www.npmjs.com/package/@unkn0wndo3s/nova-design-system', icon: 'npm' },
-      { label: 'Sources (Gitea)', url: 'https://git.novaprojects.dev/unkn0wn/nova-design-system', icon: 'gitea' },
+      { label: 'npm', url: 'https://www.npmjs.com/package/@unkn0wndo3s/nova-design-system' },
+      { label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn/nova-design-system' },
     ],
   },
   {
     slug: 'nova-infra',
-    designation: '02',
-    title: 'Self-hosted Infrastructure & Deployment',
-    tagline: 'Containerized services, CI/CD, and secured ingress on a dedicated server.',
-    period: '2025 - ongoing',
-    role: 'Design & operations',
+    name: 'Self-hosted Infrastructure',
     status: 'live',
     featured: true,
-    summary:
-      'Self-hosted infrastructure running on a dedicated OVH server. Four application containers currently active alongside the hosted sites, with Git, secret management, and exposure through an Apache reverse proxy.',
-    context: [
-      'Containerized with Docker on a dedicated OVH server.',
-      'Services exposed through an Apache reverse proxy, suited to a dedicated-machine setup.',
-      'Two domains managed: novaprojects.dev (4+ subdomains for self-hosted services) and louis-potevin.dev (1 subdomain).',
+    tagline: {
+      fr: 'Services conteneurisés, CI/CD et ingress sécurisé sur serveur dédié.',
+      en: 'Containerized services, CI/CD and secured ingress on a dedicated server.',
+    },
+    summary: {
+      fr: "Infrastructure auto-hébergée sur serveur OVH : forge Git (Gitea), gestionnaire de secrets (Vaultwarden), runners CI et sites hébergés, exposés derrière un reverse proxy Apache et Cloudflare.",
+      en: 'Self-hosted infrastructure on an OVH server: Git forge (Gitea), secret manager (Vaultwarden), CI runners and hosted sites, exposed behind an Apache reverse proxy and Cloudflare.',
+    },
+    body: [
+      {
+        fr: "Tout mon outillage de développement tourne sur ma propre infrastructure : Gitea pour le code et les releases, Vaultwarden pour les secrets, un runner Gitea Actions pour la CI/CD, et les sites de production (dont celui-ci).",
+        en: 'All my development tooling runs on my own infrastructure: Gitea for code and releases, Vaultwarden for secrets, a Gitea Actions runner for CI/CD, and the production sites (including this one).',
+      },
+      {
+        fr: "Chaque service est conteneurisé et isolé ; l'exposition passe par un reverse proxy Apache avec TLS, derrière Cloudflare pour le DNS et la protection. Les déploiements sont entièrement automatisés : un push sur `main` suffit.",
+        en: 'Each service is containerized and isolated; exposure goes through an Apache reverse proxy with TLS, behind Cloudflare for DNS and protection. Deployments are fully automated: a push to `main` is all it takes.',
+      },
     ],
-    contributions: [
-      'Setup and administration of a self-hosted Gitea instance with a Postgres backend and one Actions runner.',
-      'Lightweight CI/CD pipelines (build, test, publish), running in about 10-20 seconds.',
-      'Day-to-day operations: Docker networks, volumes, DNS, diagnostics.',
-      'Identified improvement areas: no monitoring or backup strategy in place yet — next iteration of the infrastructure.',
+    highlights: [
+      { fr: 'Forge Git + CI/CD + secrets 100 % auto-hébergés', en: '100% self-hosted Git forge + CI/CD + secrets' },
+      { fr: 'Reverse proxy Apache, TLS, DNS et protection Cloudflare', en: 'Apache reverse proxy, TLS, Cloudflare DNS and protection' },
+      { fr: 'Déploiement continu : push sur main = mise en production', en: 'Continuous deployment: push to main = production release' },
     ],
     stack: [
-      { icon: 'docker', label: 'Docker' },
-      { icon: 'linux', label: 'Linux' },
-      { icon: 'apache', label: 'Apache (reverse proxy)' },
-      { icon: 'gitea', label: 'Gitea' },
+      { name: 'Docker', icon: 'Docker' },
+      { name: 'Linux', icon: 'Linux' },
+      { name: 'Apache', icon: 'Apache' },
+      { name: 'Gitea', icon: 'Gitea' },
+      { name: 'Cloudflare', icon: 'Cloudflare' },
     ],
-    links: [{ label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn', icon: 'gitea' }],
+    links: [{ label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn' }],
   },
   {
     slug: 'portfolio',
-    designation: '03',
-    title: 'louis-potevin.dev',
-    tagline: 'This website. Multi-page Astro app, 3D space background, 100% powered by Nova Design System.',
-    period: '2026',
-    role: 'Design & development',
+    name: 'louis-potevin.dev',
     status: 'live',
     featured: true,
-    summary:
-      'A static multi-page portfolio (5 pages), entirely composed with Nova components, with a subtle Three.js space background. Built in one day, recently shipped.',
-    context: [
-      'Three.js background: starfield, nebula, and an ambient asteroid.',
-      'UI entirely composed using the in-house design system.',
-      'Astro with Static Site Generation (SSG), chosen for its simplicity over Svelte (already comfortable with Vue.js, and not fond of the Svelte DX).',
+    tagline: {
+      fr: 'Ce site. Astro multi-pages, fond 3D, bilingue, 100 % Nova Design System.',
+      en: 'This website. Multi-page Astro app, 3D background, bilingual, 100% Nova Design System.',
+    },
+    summary: {
+      fr: "Portfolio statique bilingue (FR/EN), entièrement composé avec les composants Nova, avec une scène spatiale Three.js pilotée par le scroll et un SEO complet (hreflang, JSON-LD, sitemap).",
+      en: 'A bilingual (FR/EN) static portfolio, entirely composed with Nova components, featuring a scroll-driven Three.js space scene and full SEO (hreflang, JSON-LD, sitemap).',
+    },
+    body: [
+      {
+        fr: "Le site sert de vitrine et de banc d'essai au design system : chaque bouton, badge, champ ou fil d'Ariane provient du paquet npm `@unkn0wndo3s/nova-design-system`, sans style dupliqué.",
+        en: 'The site doubles as a showcase and test bench for the design system: every button, badge, field or breadcrumb comes from the `@unkn0wndo3s/nova-design-system` npm package, with no duplicated styling.',
+      },
+      {
+        fr: "Côté 3D, une ceinture d'astéroïdes réagit au scroll sur la page d'accueil et les composants du design system flottent en 3D sur sa page projet. Le tout se coupe proprement sans WebGL ou quand l'utilisateur préfère réduire les animations.",
+        en: 'On the 3D side, an asteroid belt reacts to scroll on the home page and the design system components float in 3D on its project page. Everything degrades cleanly without WebGL or when the user prefers reduced motion.',
+      },
     ],
-    contributions: [
-      'Full integration of Nova tokens and components.',
-      'Respects prefers-reduced-motion and degrades gracefully when WebGL is unavailable.',
-      'Current Lighthouse scores: Accessibility 100, Best Practices 100, SEO 92, Performance 92.',
-      'Roadmap: multilingual version, dark/light mode toggle. No audience data yet (site just went live), no CV download for now.',
+    highlights: [
+      { fr: 'Bilingue FR/EN avec hreflang et sitemap localisé', en: 'Bilingual FR/EN with hreflang and localized sitemap' },
+      { fr: 'Scène Three.js pilotée par le scroll, fallback sans WebGL', en: 'Scroll-driven Three.js scene, no-WebGL fallback' },
+      { fr: 'JSON-LD Person / WebSite / BreadcrumbList / SoftwareSourceCode', en: 'Person / WebSite / BreadcrumbList / SoftwareSourceCode JSON-LD' },
     ],
     stack: [
-      { icon: 'astro', label: 'Astro' },
-      { icon: 'typescript', label: 'TypeScript' },
-      { icon: 'sass', label: 'Sass' },
+      { name: 'Astro', icon: 'Astro' },
+      { name: 'TypeScript', icon: 'Typescript' },
+      { name: 'Sass', icon: 'Sass' },
+      { name: 'Three.js', icon: 'Threedotjs' },
     ],
-    links: [{ label: 'Unkn0wn Projects', url: 'https://louis-potevin.dev/', icon: 'astro' }],
+    links: [{ label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn/portfolio' }],
   },
   {
-    slug: 'rust-file-organizer',
-    designation: '04',
-    title: 'File Organizer - Java to Rust',
-    tagline: 'File sorting tool, currently being ported from Java to Rust.',
-    period: '2025 - ongoing',
-    role: 'Development',
-    status: 'r&d',
+    slug: 'file-organizer',
+    name: 'File Organizer',
+    status: 'wip',
     featured: false,
-    summary:
-      'An automatic sorting tool that moves downloaded files and folders into dedicated directories (executables, archives, etc.) at the root of the downloads folder, alongside the existing images/videos/documents directories. The Java version, functional on Windows, is being ported to Rust for Linux compatibility, cleaner code, and a simpler build.',
-    context: [
-      'Current Java version: many dependencies, slower build, loosely structured code, requires Java installed (or shipping the executable).',
-      'Rust version: better organized code, simpler compilation, expected scan performance on par with or better than Java.',
-      'GUI built with GPUI (used for the interface only), with a side console for monitoring/diagnosing errors.',
+    tagline: {
+      fr: "Portage Java vers Rust d'un organiseur de fichiers, UI native avec GPUI.",
+      en: 'Java-to-Rust port of a file organizer, native UI with GPUI.',
+    },
+    summary: {
+      fr: "Réécriture en Rust d'un outil d'organisation de fichiers initialement en Java : surveillance du système de fichiers avec `notify`, interface native GPUI, et architecture qui sépare strictement la logique fichiers de l'UI.",
+      en: 'A Rust rewrite of a file-organizing tool originally built in Java: filesystem watching with `notify`, a native GPUI interface, and an architecture that strictly separates file logic from the UI.',
+    },
+    body: [
+      {
+        fr: "L'objectif du portage : gagner en performance et en fiabilité, et apprendre Rust sur un vrai projet. La logique métier (règles de tri, déplacement, surveillance) est pure et testable, indépendante de la couche de rendu.",
+        en: 'The goal of the port: gain performance and reliability, and learn Rust on a real project. The business logic (sorting rules, moves, watching) is pure and testable, independent from the rendering layer.',
+      },
     ],
-    contributions: [
-      'Sorting logic: moves files/folders into type-specific directories (executables, archives, etc.), with subfolders grouped into a "folders" directory.',
-      'Sorting safety under review: the Java version copied then deleted the source after the copy completed (to prevent data loss); the approach will be revisited in Rust.',
-      'Key goal of the port: deep recursive scanning — the Java version only knows about files/folders it has moved or seen at the surface level, not nested contents.',
-      'Current state: UI nearly complete, sorting logic still to be rewritten; tested on small volumes so far, targeting 10k+ files at once since it runs on startup.',
-      'Open source on GitHub; will move to Gitea once the Rust port is finished.',
+    highlights: [
+      { fr: 'Logique filesystem pure, découplée de l’UI', en: 'Pure filesystem logic, decoupled from the UI' },
+      { fr: 'Surveillance temps réel avec le crate notify', en: 'Real-time watching with the notify crate' },
     ],
     stack: [
-      { icon: 'rust', label: 'Rust' },
-      { icon: 'linux', label: 'Linux (upcoming)' },
+      { name: 'Rust', icon: 'Rust' },
+      { name: 'GPUI', icon: 'Rust' },
     ],
-    links: [],
-  },
-  {
-    slug: 'llm-tooling',
-    designation: '05',
-    title: 'LLM Training & Inference',
-    tagline: 'Language models trained on a Reddit conversation dataset, aiming for a voice-capable, autonomous assistant.',
-    period: '2025 - ongoing',
-    role: 'Development',
-    status: 'r&d',
-    featured: false,
-    summary:
-      'A language model training and inference project on a dedicated machine, scaling up progressively: 100M, then 500M, 1B, and potentially 3B parameters. The end goal is a voice-capable conversational AI that learns from its conversations and gains a degree of autonomy.',
-    context: [
-      'Dedicated machine: Ryzen 9 9900X, RTX 5070 Ti, 64GB DDR5 6400MHz CL32.',
-      'Dataset: Reddit conversations, starting at roughly 100GB with a target of scaling up to 1-2TB.',
-      'Custom in-house inference script (currently being designed).',
-    ],
-    contributions: [
-      'Assembling and structuring the Reddit conversation dataset.',
-      'Setting up the training pipeline, currently in the preparation phase (training has not started yet, so no quality metrics are available at this stage).',
-    ],
-    stack: [
-      { icon: 'python', label: 'Python' },
-      { icon: 'linux', label: 'Linux' },
-    ],
-    links: [],
+    links: [{ label: 'GitHub', url: 'https://github.com/unkn0wndo3s/file-organizer' }],
   },
 ];
 
 export const featuredProjects = projects.filter((p) => p.featured);
 
-export const statusMeta: Record<ProjectStatus, { label: string; tone: 'success' | 'primary' | 'neutral' | 'warning' }> = {
-  live: { label: 'Live', tone: 'success' },
-  maintained: { label: 'Maintained', tone: 'primary' },
-  'r&d': { label: 'In Progress', tone: 'warning' },
-  archived: { label: 'Archived', tone: 'neutral' },
-};
+export function getProject(slug: string): Project | undefined {
+  return projects.find((p) => p.slug === slug);
+}
+
+/* ── NDS showcase data (project page "flying components" tour) ─────────────── */
+
+export interface ShowcaseStage {
+  id: string;
+  component: string;
+  title: Localized;
+  description: Localized;
+  tokens: string[];
+}
+
+export const ndsShowcase: ShowcaseStage[] = [
+  {
+    id: 'button',
+    component: 'Button',
+    title: { fr: 'Button - quatre intentions, trois tailles', en: 'Button - four intents, three sizes' },
+    description: {
+      fr: 'Primary, secondary, ghost et danger. Rendu en lien ou en bouton selon la prop href, focus visible au clavier.',
+      en: 'Primary, secondary, ghost and danger. Renders as a link or a button depending on the href prop, visible keyboard focus.',
+    },
+    tokens: ['--nds-primary', '--nds-on-primary', '--nds-radius-md', '--nds-ring'],
+  },
+  {
+    id: 'badge',
+    component: 'Badge',
+    title: { fr: 'Badge - statuts sémantiques', en: 'Badge - semantic statuses' },
+    description: {
+      fr: 'Six types (primary, neutral, success, warning, error, info) en deux variantes, soft et solid, dérivées des tokens de statut.',
+      en: 'Six types (primary, neutral, success, warning, error, info) in two variants, soft and solid, derived from the status tokens.',
+    },
+    tokens: ['--nds-success-medium', '--nds-warning-low', '--nds-radius-full'],
+  },
+  {
+    id: 'textfield',
+    component: 'TextField',
+    title: { fr: 'TextField - saisie avec compteur', en: 'TextField - input with counter' },
+    description: {
+      fr: 'Texte, e-mail, mot de passe ou textarea, avec label lié, placeholder et compteur de caractères optionnel.',
+      en: 'Text, e-mail, password or textarea, with a bound label, placeholder and optional character counter.',
+    },
+    tokens: ['--nds-surface', '--nds-border', '--nds-text', '--nds-ring'],
+  },
+  {
+    id: 'toggle',
+    component: 'Toggle',
+    title: { fr: 'Toggle - Web Component', en: 'Toggle - Web Component' },
+    description: {
+      fr: "Implémenté selon le pattern Web Components : état interne, événements natifs, utilisable hors d'Astro.",
+      en: 'Built on the Web Components pattern: internal state, native events, usable outside Astro.',
+    },
+    tokens: ['--nds-primary', '--nds-surface-2', '--nds-radius-full'],
+  },
+  {
+    id: 'select',
+    component: 'Select',
+    title: { fr: 'Select - liste déroulante accessible', en: 'Select - accessible dropdown' },
+    description: {
+      fr: 'Select et SelectOption composables, navigation clavier, valeur par défaut et état désactivé.',
+      en: 'Composable Select and SelectOption, keyboard navigation, default value and disabled state.',
+    },
+    tokens: ['--nds-surface', '--nds-border-strong', '--nds-shadow-md'],
+  },
+  {
+    id: 'pagination',
+    component: 'Pagination',
+    title: { fr: 'Pagination - navigation par pages', en: 'Pagination - page navigation' },
+    description: {
+      fr: 'Pagination et PaginationNumber composables, état courant et bornes gérés par le composant.',
+      en: 'Composable Pagination and PaginationNumber, current state and bounds handled by the component.',
+    },
+    tokens: ['--nds-primary-soft', '--nds-text', '--nds-radius-md'],
+  },
+];

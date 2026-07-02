@@ -1,56 +1,49 @@
 ---
-// Monochrome tech icon (inherits `color` via fill=currentColor).
+/**
+ * Renders a technology icon by simple-icons name, with its label.
+ * Icons are imported explicitly so the build only ships what's used.
+ */
 import {
-  Typescript,
-  Javascript,
-  Postgresql,
-  Docker,
-  Astro as AstroIcon,
-  Sass,
-  Gitea,
-  Linux,
-  Cloudflare,
-  Threedotjs,
-  Rust,
-  Python,
-  Npm,
-  Github,
-  Svelte,
-  Git,
-  Nodedotjs,
-  Vuedotjs,
-  Figma,
+  Apache, Astro as AstroIcon, Cloudflare, Docker, Figma, Git, Gitea,
+  Javascript, Linux, Nodedotjs, Npm, Postgresql, Python, Rust, Sass,
+  Threedotjs, Typescript, Vuedotjs,
 } from 'simple-icons-astro';
 
 export interface Props {
   name: string;
+  icon: string;
   size?: number;
 }
-const { name, size = 18 } = Astro.props;
 
-const map: Record<string, any> = {
-  typescript: Typescript,
-  javascript: Javascript,
-  postgresql: Postgresql,
-  docker: Docker,
-  astro: AstroIcon,
-  sass: Sass,
-  gitea: Gitea,
-  linux: Linux,
-  cloudflare: Cloudflare,
-  threedotjs: Threedotjs,
-  rust: Rust,
-  python: Python,
-  npm: Npm,
-  github: Github,
-  svelte: Svelte,
-  git: Git,
-  nodedotjs: Nodedotjs,
-  vue: Vuedotjs,
-  figma: Figma,
+const icons: Record<string, (props: Record<string, unknown>) => unknown> = {
+  Apache, Astro: AstroIcon, Cloudflare, Docker, Figma, Git, Gitea,
+  Javascript, Linux, Nodedotjs, Npm, Postgresql, Python, Rust, Sass,
+  Threedotjs, Typescript, Vuedotjs,
 };
 
-const Icon = map[name];
+const { name, icon, size = 18 } = Astro.props;
+const Icon = icons[icon];
 ---
 
-{Icon && <Icon size={size} fill="currentColor" />}
+<span class="tech">
+  {Icon && <Icon size={size} aria-hidden="true" />}
+  <span>{name}</span>
+</span>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .tech {
+    @include type.text-label;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-xs);
+    padding: var(--nds-spacing-xs) var(--nds-spacing-sm);
+    color: var(--nds-text);
+    background: var(--nds-surface);
+    border: var(--nds-border-width-thin) solid var(--nds-border);
+    border-radius: var(--nds-radius-full);
+
+    :global(svg) { color: var(--nds-primary); flex-shrink: 0; }
+  }
+</style>

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Button } from '@unkn0wndo3s/nova-design-system';
+import { getLocaleFromUrl, useTranslations, localizePath } from '../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+---
+
+<BaseLayout title={t('notfound.title')} description={t('notfound.body')}>
+  <section class="notfound">
+    <p class="code" aria-hidden="true">404</p>
+    <h1>{t('notfound.title')}</h1>
+    <p class="body">{t('notfound.body')}</p>
+    <Button type="primary" href={localizePath('/', locale)}>{t('notfound.back')}</Button>
+  </section>
+</BaseLayout>
+
+<style lang="scss">
+  @use '../styles/type' as type;
+
+  .notfound {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: var(--nds-spacing-md);
+    padding-block: var(--nds-spacing-3xl);
+  }
+
+  .code {
+    @include type.text-5xl;
+    margin: 0;
+    color: var(--nds-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1 {
+    @include type.text-3xl;
+    margin: 0;
+    color: var(--nds-text);
+  }
+
+  .body {
+    @include type.text-base;
+    margin: 0;
+    max-width: 34rem;
+    color: var(--nds-neutral);
+  }
+</style>

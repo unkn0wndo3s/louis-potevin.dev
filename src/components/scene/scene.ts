@@ -1,248 +1,360 @@
+/**
+ * Space scene - ambient starfield + nebula, plus a scroll-reactive asteroid belt.
+ *
+ * Behavior contract:
+ *  - Scrolling DOWN injects energy: asteroids drift apart, collide elastically
+ *    and emit spark bursts on impact.
+ *  - Scrolling UP does NOT rewind: a gravity vortex wakes up and pulls the
+ *    belt into a slow spiral until it settles back into formation.
+ *  - No WebGL, `prefers-reduced-motion`, or a lost context -> the canvas is
+ *    removed and the site remains fully readable.
+ *
+ * Everything runs on a single fixed canvas, capped at DPR 2, paused when the
+ * tab is hidden.
+ */
 import * as THREE from 'three';
 
-// Ambient space background: starfield, subtle nebula, and a slow-drifting,
-// slow-rotating asteroid. No scroll binding, no engine flames.
-// Slight pointer parallax. Respects prefers-reduced-motion.
+const ASTEROID_COUNT = 90;
+const BELT_RADIUS = 26;
+const BELT_THICKNESS = 9;
+const ASTEROID_MIN_R = 0.28;
+const ASTEROID_MAX_R = 1.15;
+const SPARK_POOL = 240;
 
-export interface SceneHandle {
-  /** Kept for compatibility - no-op (no more impact/flame effect). */
-  setImpact(value: number): void;
-  destroy(): void;
+interface AsteroidState {
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  spin: THREE.Vector3;
+  rotation: THREE.Euler;
+  radius: number;
+  /** Slot in the resting formation, used by the vortex to settle back. */
+  home: THREE.Vector3;
 }
 
-const COLORS = {
-  star: 0xecf5f5,
-  starCool: 0x34c2c9,
-  starAccent: 0x2efafa,
-  nebulaA: 0x288181,
-  nebulaB: 0x1fa6ad,
-  rock: 0x1a2a2a,
-  rim: 0x34c2c9,
-};
-
-const prefersReduced =
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-/** Small reusable radial texture (soft glow). */
-function radialTexture(inner: string, outer = 'rgba(0,0,0,0)'): THREE.Texture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const ctx = c.getContext('2d')!;
-  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, inner);
-  g.addColorStop(0.4, inner);
-  g.addColorStop(1, outer);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-export function initScene(canvas: HTMLCanvasElement): SceneHandle {
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: true,
-    powerPreference: 'high-performance',
-  });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
+export function mountSpaceScene(canvas: HTMLCanvasElement): (() => void) | null {
+  if (prefersReducedMotion()) {
+    canvas.remove();
+    return null;
+  }
+
+  let renderer: THREE.WebGLRenderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  } catch {
+    canvas.remove();
+    return null;
+  }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x040b0b, 0.012);
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 400);
+  camera.position.set(0, 0, 46);
 
-  const camera = new THREE.PerspectiveCamera(
-    55,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    400,
-  );
-  camera.position.set(0, 0, 18);
-
-  // Lighting (cold, consistent with Nova tokens)
-  const ambient = new THREE.AmbientLight(0x16323a, 1.0);
-  scene.add(ambient);
-  const key = new THREE.DirectionalLight(COLORS.starCool, 0.9);
-  key.position.set(-6, 5, 9);
+  scene.add(new THREE.AmbientLight(0x9fdadd, 0.35));
+  const key = new THREE.DirectionalLight(0x7ff5f5, 1.4);
+  key.position.set(18, 22, 30);
   scene.add(key);
-  const rimLight = new THREE.DirectionalLight(COLORS.starAccent, 0.4);
-  rimLight.position.set(8, -3, 4);
-  scene.add(rimLight);
 
-  //  Starfield 
-  const STAR_COUNT = prefersReduced ? 700 : 1700;
-  const starGeo = new THREE.BufferGeometry();
-  const starPos = new Float32Array(STAR_COUNT * 3);
-  const starCol = new Float32Array(STAR_COUNT * 3);
-  const palette = [
-    new THREE.Color(COLORS.star),
-    new THREE.Color(COLORS.starCool),
-    new THREE.Color(COLORS.starAccent),
-  ];
-  for (let i = 0; i < STAR_COUNT; i++) {
-    starPos[i * 3] = (Math.random() - 0.5) * 120;
-    starPos[i * 3 + 1] = (Math.random() - 0.5) * 120;
-    starPos[i * 3 + 2] = (Math.random() - 0.5) * 120 - 20;
-    const col = palette[Math.random() < 0.78 ? 0 : Math.random() < 0.6 ? 1 : 2];
-    starCol[i * 3] = col.r;
-    starCol[i * 3 + 1] = col.g;
-    starCol[i * 3 + 2] = col.b;
+  /* ── Starfield ─────────────────────────────────────────────────────────── */
+  const starGeometry = new THREE.BufferGeometry();
+  const starCount = 1400;
+  const starPositions = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount; i++) {
+    const r = 90 + Math.random() * 220;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    starPositions[i * 3 + 2] = r * Math.cos(phi);
   }
-  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-  starGeo.setAttribute('color', new THREE.BufferAttribute(starCol, 3));
-  const starMat = new THREE.PointsMaterial({
-    size: 0.42,
-    map: radialTexture('rgba(255,255,255,0.95)'),
-    transparent: true,
-    depthWrite: false,
-    vertexColors: true,
-    blending: THREE.AdditiveBlending,
-  });
-  const stars = new THREE.Points(starGeo, starMat);
+  starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+  const stars = new THREE.Points(
+    starGeometry,
+    new THREE.PointsMaterial({ color: 0xbfeeee, size: 0.55, sizeAttenuation: true, transparent: true, opacity: 0.8 }),
+  );
   scene.add(stars);
 
-  //  Nebula (soft sprites, pushed far into the background) 
-  const nebula = new THREE.Group();
-  const nebTex = radialTexture('rgba(40,129,129,0.55)');
-  [
-    { x: -14, y: 8, z: -45, s: 60, c: COLORS.nebulaA },
-    { x: 16, y: -10, z: -55, s: 72, c: COLORS.nebulaB },
-    { x: 4, y: 14, z: -40, s: 46, c: COLORS.nebulaA },
-  ].forEach((n) => {
-    const mat = new THREE.SpriteMaterial({
-      map: nebTex,
-      color: n.c,
-      transparent: true,
-      opacity: 0.2,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const sp = new THREE.Sprite(mat);
-    sp.position.set(n.x, n.y, n.z);
-    sp.scale.set(n.s, n.s, 1);
-    nebula.add(sp);
-  });
-  scene.add(nebula);
-
-  //  Asteroid (cold rock, subtle halo) 
-  const asteroid = new THREE.Group();
-  const rockGeo = new THREE.IcosahedronGeometry(1.9, 2);
-  const pos = rockGeo.attributes.position as THREE.BufferAttribute;
-  const v = new THREE.Vector3();
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const h = Math.sin(v.x * 4.1) * Math.cos(v.y * 3.7) * Math.sin(v.z * 4.3);
-    const d = 1 + h * 0.16;
-    v.multiplyScalar(d);
-    pos.setXYZ(i, v.x, v.y, v.z);
+  /* ── Nebula (two soft additive sprites) ────────────────────────────────── */
+  const nebulaTexture = makeGlowTexture();
+  for (const [x, y, s, o] of [
+    [-34, 14, 120, 0.10],
+    [30, -20, 150, 0.07],
+  ] as const) {
+    const sprite = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: nebulaTexture,
+        color: 0x1fa6ad,
+        transparent: true,
+        opacity: o,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    sprite.position.set(x, y, -60);
+    sprite.scale.setScalar(s);
+    scene.add(sprite);
   }
-  rockGeo.computeVertexNormals();
-  const rockMat = new THREE.MeshStandardMaterial({
-    color: COLORS.rock,
-    emissive: COLORS.rim,
-    emissiveIntensity: 0.12,
+
+  /* ── Asteroid belt (instanced) ─────────────────────────────────────────── */
+  const rockGeometry = makeRockGeometry();
+  const rockMaterial = new THREE.MeshStandardMaterial({
+    color: 0x2a4040,
     roughness: 0.92,
     metalness: 0.12,
     flatShading: true,
   });
-  const rock = new THREE.Mesh(rockGeo, rockMat);
-  asteroid.add(rock);
+  const belt = new THREE.InstancedMesh(rockGeometry, rockMaterial, ASTEROID_COUNT);
+  belt.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(belt);
 
-  // very light cold halo, just to separate the rock from the background
-  const glow = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: radialTexture('rgba(52,194,201,0.7)'),
-      color: COLORS.rim,
-      transparent: true,
-      opacity: 0.28,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    }),
-  );
-  glow.scale.set(7.5, 7.5, 1);
-  asteroid.add(glow);
+  const asteroids: AsteroidState[] = [];
+  for (let i = 0; i < ASTEROID_COUNT; i++) {
+    const angle = (i / ASTEROID_COUNT) * Math.PI * 2 + Math.random() * 0.35;
+    const radius = BELT_RADIUS + (Math.random() - 0.5) * BELT_THICKNESS;
+    const home = new THREE.Vector3(
+      Math.cos(angle) * radius,
+      (Math.random() - 0.5) * 10,
+      -8 + Math.sin(angle) * 10,
+    );
+    asteroids.push({
+      position: home.clone(),
+      velocity: new THREE.Vector3(),
+      spin: new THREE.Vector3(Math.random(), Math.random(), Math.random()).multiplyScalar(0.4),
+      rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, 0),
+      radius: ASTEROID_MIN_R + Math.random() * (ASTEROID_MAX_R - ASTEROID_MIN_R),
+      home,
+    });
+  }
 
-  // ambient position: top right, set back
-  asteroid.position.set(6.5, 4.5, -2);
-  scene.add(asteroid);
+  /* ── Spark pool for collision impacts ──────────────────────────────────── */
+  const sparkGeometry = new THREE.BufferGeometry();
+  const sparkPositions = new Float32Array(SPARK_POOL * 3);
+  sparkGeometry.setAttribute('position', new THREE.BufferAttribute(sparkPositions, 3));
+  const sparkMaterial = new THREE.PointsMaterial({
+    color: 0x2efafa,
+    size: 0.5,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const sparks = new THREE.Points(sparkGeometry, sparkMaterial);
+  scene.add(sparks);
+  const sparkVel: THREE.Vector3[] = [];
+  const sparkLife: number[] = [];
+  for (let i = 0; i < SPARK_POOL; i++) {
+    sparkVel.push(new THREE.Vector3());
+    sparkLife.push(0);
+    sparkPositions.set([0, -999, 0], i * 3);
+  }
+  let sparkCursor = 0;
 
-  // State & loop 
-  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  function burst(at: THREE.Vector3, strength: number) {
+    const n = 10 + Math.floor(strength * 8);
+    for (let i = 0; i < n; i++) {
+      const idx = sparkCursor;
+      sparkCursor = (sparkCursor + 1) % SPARK_POOL;
+      sparkPositions.set([at.x, at.y, at.z], idx * 3);
+      sparkVel[idx]!
+        .set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+        .normalize()
+        .multiplyScalar(3 + Math.random() * 5 * strength);
+      sparkLife[idx] = 0.9;
+    }
+  }
+
+  /* ── Scroll energy model ───────────────────────────────────────────────── */
+  let lastScrollY = window.scrollY;
+  let downEnergy = 0; // fuels drift + collisions
+  let upEnergy = 0; // fuels the vortex
+  let beltVisible = true;
+
+  const beltAnchor = document.querySelector<HTMLElement>('[data-belt-anchor]');
+  if (beltAnchor) {
+    beltVisible = false;
+    new IntersectionObserver(
+      (entries) => {
+        beltVisible = entries[0]?.isIntersecting ?? true;
+      },
+      { rootMargin: '20% 0px' },
+    ).observe(beltAnchor);
+  }
+
+  function onScroll() {
+    const delta = window.scrollY - lastScrollY;
+    lastScrollY = window.scrollY;
+    if (!beltVisible) return;
+    if (delta > 0) downEnergy = Math.min(1.6, downEnergy + delta * 0.004);
+    else if (delta < 0) upEnergy = Math.min(1.6, upEnergy - delta * 0.004);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  /* ── Simulation ────────────────────────────────────────────────────────── */
+  const matrix = new THREE.Matrix4();
+  const quaternion = new THREE.Quaternion();
+  const scaleVec = new THREE.Vector3();
+  const tmp = new THREE.Vector3();
+  // Manual timing (THREE.Clock is deprecated).
+  let lastTime = performance.now();
+  let elapsed = 0;
+  let raf = 0;
   let running = true;
 
-  function onPointer(e: PointerEvent) {
-    pointer.tx = (e.clientX / window.innerWidth - 0.5) * 2;
-    pointer.ty = (e.clientY / window.innerHeight - 0.5) * 2;
+  function step() {
+    raf = requestAnimationFrame(step);
+    if (!running) return;
+    const now = performance.now();
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+    elapsed += dt;
+    const t = elapsed;
+
+    stars.rotation.y = t * 0.004;
+    downEnergy = Math.max(0, downEnergy - dt * 0.55);
+    upEnergy = Math.max(0, upEnergy - dt * 0.4);
+
+    for (const a of asteroids) {
+      // Scroll down: outward drift + slight chaos -> collisions happen.
+      if (downEnergy > 0.01) {
+        tmp.copy(a.position).sub(new THREE.Vector3(0, 0, -8)).normalize();
+        a.velocity.addScaledVector(tmp, downEnergy * dt * 2.2);
+        a.velocity.x += (Math.random() - 0.5) * downEnergy * dt * 3;
+        a.velocity.y += (Math.random() - 0.5) * downEnergy * dt * 3;
+      }
+
+      // Scroll up: vortex - tangential pull + gentle fall toward home orbit.
+      if (upEnergy > 0.01) {
+        tmp.set(-(a.position.y - a.home.y) - a.position.x * 0.3, a.position.x - a.home.x, 0);
+        a.velocity.addScaledVector(tmp.normalize(), upEnergy * dt * 3.4);
+        tmp.copy(a.home).sub(a.position);
+        a.velocity.addScaledVector(tmp, upEnergy * dt * 0.9);
+      }
+
+      // Always: soft spring back to formation + drag.
+      tmp.copy(a.home).sub(a.position);
+      a.velocity.addScaledVector(tmp, dt * 0.25);
+      a.velocity.multiplyScalar(1 - dt * 0.8);
+      a.position.addScaledVector(a.velocity, dt);
+
+      a.rotation.x += a.spin.x * dt;
+      a.rotation.y += a.spin.y * dt;
+    }
+
+    // Elastic collisions (spatially naive is fine at N=90).
+    if (downEnergy > 0.05) {
+      for (let i = 0; i < asteroids.length; i++) {
+        const a = asteroids[i]!;
+        for (let j = i + 1; j < asteroids.length; j++) {
+          const b = asteroids[j]!;
+          tmp.copy(b.position).sub(a.position);
+          const dist = tmp.length();
+          const minDist = a.radius + b.radius;
+          if (dist > 0.0001 && dist < minDist) {
+            tmp.normalize();
+            const relative = tmp.dot(b.velocity.clone().sub(a.velocity));
+            if (relative < 0) {
+              const impulse = -relative;
+              a.velocity.addScaledVector(tmp, -impulse * 0.5);
+              b.velocity.addScaledVector(tmp, impulse * 0.5);
+              const overlap = minDist - dist;
+              a.position.addScaledVector(tmp, -overlap / 2);
+              b.position.addScaledVector(tmp, overlap / 2);
+              if (impulse > 1.2) {
+                burst(a.position.clone().addScaledVector(tmp, a.radius), Math.min(impulse / 4, 1));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < asteroids.length; i++) {
+      const a = asteroids[i]!;
+      quaternion.setFromEuler(a.rotation);
+      scaleVec.setScalar(a.radius);
+      matrix.compose(a.position, quaternion, scaleVec);
+      belt.setMatrixAt(i, matrix);
+    }
+    belt.instanceMatrix.needsUpdate = true;
+
+    for (let i = 0; i < SPARK_POOL; i++) {
+      if (sparkLife[i]! <= 0) continue;
+      sparkLife[i]! -= dt;
+      sparkVel[i]!.multiplyScalar(1 - dt * 2);
+      sparkPositions[i * 3] += sparkVel[i]!.x * dt;
+      sparkPositions[i * 3 + 1] += sparkVel[i]!.y * dt;
+      sparkPositions[i * 3 + 2] += sparkVel[i]!.z * dt;
+      if (sparkLife[i]! <= 0) sparkPositions[i * 3 + 1] = -999;
+    }
+    sparkGeometry.attributes.position!.needsUpdate = true;
+    sparkMaterial.opacity = 0.5 + downEnergy * 0.3;
+
+    camera.position.x = Math.sin(t * 0.05) * 1.2;
+    camera.position.y = Math.cos(t * 0.04) * 0.8;
+    camera.lookAt(0, 0, -8);
+
+    renderer.render(scene, camera);
   }
 
   function onResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
   }
+  window.addEventListener('resize', onResize);
 
   function onVisibility() {
     running = document.visibilityState === 'visible';
-    if (running) loop();
+    if (running) lastTime = performance.now(); // swallow the pause
   }
-
-  window.addEventListener('resize', onResize);
-  window.addEventListener('pointermove', onPointer, { passive: true });
   document.addEventListener('visibilitychange', onVisibility);
 
-  const clock = new THREE.Clock();
-  let rafId = 0;
+  step();
 
-  function loop() {
-    if (!running) return;
-    rafId = requestAnimationFrame(loop);
-    const dt = Math.min(clock.getDelta(), 0.05);
-    const t = clock.elapsedTime;
-
-    // slow background drift
-    stars.rotation.y += dt * 0.01;
-    nebula.rotation.z += dt * 0.004;
-
-    // asteroid: self-rotation + slight float (no scroll binding)
-    if (!prefersReduced) {
-      rock.rotation.x += dt * 0.18;
-      rock.rotation.y += dt * 0.26;
-      asteroid.position.y = 4.5 + Math.sin(t * 0.25) * 0.5;
-      asteroid.position.x = 6.5 + Math.cos(t * 0.18) * 0.4;
-    }
-
-    // smooth camera parallax via pointer
-    pointer.x += (pointer.tx - pointer.x) * dt * 2;
-    pointer.y += (pointer.ty - pointer.y) * dt * 2;
-    camera.position.x = pointer.x * 1.2;
-    camera.position.y = -pointer.y * 0.8 + Math.sin(t * 0.3) * 0.15;
-    camera.lookAt(0, 0, 0);
-
-    renderer.render(scene, camera);
-  }
-  loop();
-
-  return {
-    setImpact() {
-      /* no-op: kept for API compatibility */
-    },
-    destroy() {
-      running = false;
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('pointermove', onPointer);
-      document.removeEventListener('visibilitychange', onVisibility);
-      renderer.dispose();
-      starGeo.dispose();
-      rockGeo.dispose();
-      scene.traverse((o) => {
-        const m = (o as THREE.Mesh).material;
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-        else if (m) (m as THREE.Material).dispose();
-      });
-    },
+  return () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onResize);
+    document.removeEventListener('visibilitychange', onVisibility);
+    renderer.dispose();
+    rockGeometry.dispose();
+    starGeometry.dispose();
+    sparkGeometry.dispose();
   };
+}
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+
+/** Irregular rock: a dodecahedron with jittered vertices. */
+function makeRockGeometry(): THREE.BufferGeometry {
+  const geometry = new THREE.DodecahedronGeometry(1, 0);
+  const pos = geometry.attributes.position!;
+  for (let i = 0; i < pos.count; i++) {
+    const jitter = 0.78 + Math.random() * 0.44;
+    pos.setXYZ(i, pos.getX(i) * jitter, pos.getY(i) * jitter, pos.getZ(i) * jitter);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** Radial-gradient sprite texture used for the nebula glow. */
+function makeGlowTexture(): THREE.Texture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }

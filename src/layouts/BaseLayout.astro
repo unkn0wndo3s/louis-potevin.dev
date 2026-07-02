@@ -6,122 +6,71 @@ import SpaceBackground from '../components/SpaceBackground.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { site } from '../data/site';
+import { personLd, webSiteLd } from '../lib/seo';
+import {
+  getLocaleFromUrl,
+  getAlternates,
+  useTranslations,
+  HTML_LANGS,
+  OG_LOCALES,
+  LOCALES,
+} from '../i18n';
 
 export interface Props {
-  title?: string;
-  description?: string;
-  /** Page-specific keywords (appended to the global keywords list). */
-  keywords?: string[];
+  title: string;
+  description: string;
+  /** Extra JSON-LD blocks for this page (breadcrumbs, project, profile...). */
+  jsonLd?: object[];
+  /** og:type - "website" for index pages, "article" for project pages. */
+  ogType?: 'website' | 'article';
+  /** Ambient space background canvas (off on pages that mount their own scene). */
+  background?: boolean;
+  /** Full-bleed main (no max-width shell) for cinematic pages. */
+  fullBleed?: boolean;
 }
 
-const {
-  title = 'Louis Potevin - Full-stack Developer (front, back, web)',
-  description = "Louis Potevin, full-stack web developer: front-end, back-end, TypeScript, Astro, Node. Available for a permanent contract (CDI) starting September 2026, anywhere in France or remote.",
-  keywords = [],
-} = Astro.props;
+const SITE_URL = 'https://louis-potevin.dev';
+const { title, description, jsonLd = [], ogType = 'website', background = true, fullBleed = false } = Astro.props;
 
-const baseKeywords = [
-  // French Keywords
-  'Louis Potevin',
-  'développeur web',
-  'developpeur web',
-  'dev web',
-  'développeur full-stack',
-  'developpeur full stack',
-  'dev front',
-  'développeur front-end',
-  'dev back',
-  'développeur back-end',
-  'développeur TypeScript',
-  'développeur Astro',
-  'développeur JavaScript',
-  'développeur Node.js',
-  'développeur freelance France',
-  'portfolio développeur',
-  'web developer',
-  'full-stack developer',
-  'full stack developer',
-  'front-end developer',
-  'front end dev',
-  'back-end developer',
-  'back end dev',
-  'TypeScript developer',
-  'Astro developer',
-  'JavaScript developer',
-  'Node.js developer',
-  'software engineer France',
-  'developer portfolio',
-];
-const allKeywords = [...baseKeywords, ...keywords].join(', ');
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const canonical = new URL(Astro.url.pathname, Astro.site ?? SITE_URL).href;
+const ogImage = new URL(`/og-${locale}.png`, Astro.site ?? SITE_URL).href;
+const alternates = getAlternates(Astro.url, (Astro.site ?? new URL(SITE_URL)).href);
+const otherLocales = LOCALES.filter((l) => l !== locale);
 
-const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://louis-potevin.dev').href;
-const ogImage = new URL('/og.png', Astro.site ?? 'https://louis-potevin.dev').href;
-
-// Structured data: Person profile (helps Google link your name ↔ profession ↔ social links).
-const personLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: site.name,
-  jobTitle: 'Full-stack Developer / Développeur full-stack',
-  description,
-  url: canonical,
-  email: `mailto:${site.email}`,
-  address: { '@type': 'PostalAddress', addressCountry: 'FR', addressLocality: 'Limoges' },
-  knowsAbout: [
-    'Web development',
-    'Développement web',
-    'Front-end',
-    'Back-end',
-    'TypeScript',
-    'JavaScript',
-    'Astro',
-    'Node.js',
-    'Sass',
-    'Docker',
-    'CI/CD',
-  ],
-  sameAs: [
-    site.links.github.url,
-    site.links.gitea.url,
-    site.links.npm.url,
-    site.links.linkedin.url,
-  ],
-};
-
-const siteLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: `${site.name} - Portfolio`,
-  url: Astro.site?.href ?? 'https://louis-potevin.dev',
-  inLanguage: ['en-US', 'fr-FR'],
-};
+const ldBlocks = [personLd(locale), webSiteLd(), ...jsonLd];
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang={HTML_LANGS[locale]} data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="sitemap" href="/sitemap-index.xml" />
 
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="keywords" content={allKeywords} />
     <meta name="author" content={site.name} />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href={canonical} />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={`${site.name} - Portfolio`} />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale" content={OG_LOCALES[locale]} />
+    {otherLocales.map((l) => <meta property="og:locale:alternate" content={OG_LOCALES[l]} />)}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} - ${t('home.hero.title.role')}`} />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -130,23 +79,29 @@ const siteLd = {
 
     <meta name="theme-color" content="#040B0B" />
 
-    <script type="application/ld+json" set:html={JSON.stringify(personLd)} />
-    <script type="application/ld+json" set:html={JSON.stringify(siteLd)} />
+    {ldBlocks.map((block) => <script is:inline type="application/ld+json" set:html={JSON.stringify(block)} />)}
   </head>
   <body>
-    <SpaceBackground />
-    <a class="skip" href="#content">Skip to content</a>
+    {background && <SpaceBackground />}
+    <a class="skip" href="#content">{t('nav.skip')}</a>
     <SiteNav />
-    <main id="content" class="shell">
+    <main id="content" class:list={[{ shell: !fullBleed }]}>
       <slot />
     </main>
     <SiteFooter />
+
+    <script>
+      // Smooth scroll everywhere - every animated surface reads from Lenis,
+      // so all motion sits on one easing curve.
+      import { ensureSmooth } from '../lib/smooth';
+      ensureSmooth();
+    </script>
 
     <style lang="scss">
       .shell {
         position: relative;
         z-index: 10;
-        max-width: 1120px;
+        max-width: 1200px;
         margin-inline: auto;
         padding-inline: clamp(20px, 5vw, 56px);
       }

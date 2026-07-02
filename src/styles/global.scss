@@ -1,44 +1,73 @@
-@use 'styles/type' as *;
+@use './type' as type;
 
 html {
   scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  background: var(--nds-background);
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   color: var(--nds-text);
   font-family: var(--nds-font-sans);
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  background-color: var(--nds-background);
+  overflow-x: clip;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--nds-primary) 35%, transparent);
-  color: var(--nds-text);
+  background: var(--nds-primary);
+  color: var(--nds-on-primary);
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--nds-border-strong) transparent;
+h1, h2, h3 {
+  font-family: var(--nds-font-mono);
+  text-wrap: balance;
+  margin: 0;
 }
 
-a {
-  color: inherit;
-}
+p { margin: 0; }
 
-img {
-  max-width: 100%;
-  display: block;
-}
+img, svg, canvas { max-width: 100%; height: auto; }
 
 :focus-visible {
-  outline: none;
+  outline: 2px solid var(--nds-primary);
+  outline-offset: 2px;
+}
+
+.section {
+  padding-block: clamp(64px, 10vh, 128px);
+}
+
+.eyebrow-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--nds-spacing-md);
+  margin-bottom: var(--nds-spacing-lg);
+}
+
+.section-title {
+  @include type.text-4xl;
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Lenis smooth scroll (recommended base styles) ---- */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* ---- Cinema mode (home voyage): the footer slides over the last overlay ---- */
+html.cinema footer {
+  position: relative;
+  z-index: 30;
+  background: var(--nds-background);
 }

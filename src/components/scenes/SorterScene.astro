@@ -1,0 +1,287 @@
+---
+/**
+ * Custom scene for `file-organizer`: from chaos to order.
+ *
+ * File chips start scattered across the board (seeded pseudo-random, so the
+ * chaos is stable between visits); scrolling sweeps each one along a small
+ * arc into its sorted column - exactly what the tool does to a messy folder.
+ * Reduced motion / no JS: the sorted end state, no pin.
+ */
+import Eyebrow from '../Eyebrow.astro';
+import { getLocaleFromUrl, useTranslations } from '../../i18n';
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+type Cat = 'img' | 'doc' | 'audio' | 'code';
+const columns: { cat: Cat; label: string }[] = [
+  { cat: 'img', label: 'Images' },
+  { cat: 'doc', label: locale === 'fr' ? 'Documents' : 'Documents' },
+  { cat: 'audio', label: 'Audio' },
+  { cat: 'code', label: 'Code' },
+];
+
+const files: { name: string; cat: Cat }[] = [
+  { name: 'IMG_2041.jpg', cat: 'img' },
+  { name: 'screenshot.png', cat: 'img' },
+  { name: 'logo.webp', cat: 'img' },
+  { name: 'scan-04.tiff', cat: 'img' },
+  { name: 'avatar.gif', cat: 'img' },
+  { name: 'cv-2026.pdf', cat: 'doc' },
+  { name: 'notes.md', cat: 'doc' },
+  { name: 'facture_03.pdf', cat: 'doc' },
+  { name: 'rapport.docx', cat: 'doc' },
+  { name: 'todo.txt', cat: 'doc' },
+  { name: 'demo-take2.wav', cat: 'audio' },
+  { name: 'podcast.mp3', cat: 'audio' },
+  { name: 'sample.flac', cat: 'audio' },
+  { name: 'voice-memo.m4a', cat: 'audio' },
+  { name: 'main.rs', cat: 'code' },
+  { name: 'organizer.rs', cat: 'code' },
+  { name: 'watch.rs', cat: 'code' },
+  { name: 'Cargo.toml', cat: 'code' },
+  { name: 'ui.rs', cat: 'code' },
+  { name: 'fs_rules.rs', cat: 'code' },
+];
+---
+
+<section class="sorter" data-sorter>
+  <div class="stage">
+    <header class="stage-head">
+      <Eyebrow>{t('scene.sorter.eyebrow')}</Eyebrow>
+      <h2>{t('scene.sorter.title')}</h2>
+    </header>
+
+    <div class="board" data-board>
+      {columns.map((col) => (
+        <div class="col" data-col={col.cat}>
+          <p class="col-head" data-col-head>{col.label}</p>
+          {files
+            .filter((f) => f.cat === col.cat)
+            .map((f) => (
+              <span class="chip" data-chip data-cat={f.cat}>
+                <i aria-hidden="true"></i>
+                {f.name}
+              </span>
+            ))}
+        </div>
+      ))}
+    </div>
+
+    <p class="hint" aria-hidden="true">{t('scene.hint')}</p>
+  </div>
+</section>
+
+<script>
+  import { scrub, clamp01 } from '../../lib/scrub';
+
+  /** Deterministic PRNG so the "chaos" looks identical on every visit. */
+  function mulberry32(seed: number) {
+    return () => {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let z = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      z = (z + Math.imul(z ^ (z >>> 7), 61 | z)) ^ z;
+      return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-sorter]');
+    if (!root) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('static');
+      return;
+    }
+
+    const board = root.querySelector<HTMLElement>('[data-board]')!;
+    const chips = Array.from(root.querySelectorAll<HTMLElement>('[data-chip]'));
+    const heads = Array.from(root.querySelectorAll<HTMLElement>('[data-col-head]'));
+
+    interface Item {
+      el: HTMLElement;
+      // Sorted (target) and scattered (start) positions, board-relative.
+      tx: number;
+      ty: number;
+      sx: number;
+      sy: number;
+      rot: number;
+      delay: number;
+    }
+    let items: Item[] = [];
+
+    const measure = () => {
+      // 1) Let the grid lay chips out sorted, measure targets.
+      root.classList.remove('is-ready');
+      board.style.height = '';
+      chips.forEach((c) => c.removeAttribute('style'));
+      const bRect = board.getBoundingClientRect();
+      board.style.height = `${bRect.height}px`;
+
+      const rng = mulberry32(20260702);
+      items = chips.map((el, i) => {
+        const r = el.getBoundingClientRect();
+        const tx = r.left - bRect.left;
+        const ty = r.top - bRect.top;
+        return {
+          el,
+          tx,
+          ty,
+          sx: rng() * (bRect.width - r.width),
+          sy: rng() * (bRect.height - r.height),
+          rot: (rng() - 0.5) * 34,
+          delay: i / chips.length,
+        };
+      });
+
+      // 2) Freeze the board height, absolutize the chips at their scatter.
+      root.classList.add('is-ready');
+      apply(lastP);
+    };
+
+    let lastP = 0;
+    const apply = (p: number) => {
+      lastP = p;
+      for (const it of items) {
+        // Each chip travels inside its own window, staggered by index.
+        const local = clamp01((p - 0.06 - it.delay * 0.5) / 0.36);
+        const e = local * local * (3 - 2 * local);
+        const x = it.sx + (it.tx - it.sx) * e;
+        const y = it.sy + (it.ty - it.sy) * e - Math.sin(e * Math.PI) * 42; // small arc
+        const rot = it.rot * (1 - e);
+        it.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${rot.toFixed(1)}deg)`;
+        it.el.classList.toggle('is-sorted', e > 0.98);
+      }
+      const done = clamp01((p - 0.86) / 0.12);
+      heads.forEach((h) => h.style.setProperty('--done', String(done)));
+    };
+
+    measure();
+    scrub(root, apply);
+
+    let resizeT = 0;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(resizeT);
+      resizeT = window.setTimeout(measure, 150);
+    });
+  }
+
+  init();
+</script>
+
+<style lang="scss">
+  @use '../../styles/type' as type;
+
+  .sorter {
+    margin-block: clamp(40px, 8vh, 96px);
+
+    &.is-ready {
+      height: 280vh;
+    }
+  }
+
+  .stage {
+    display: grid;
+    gap: var(--nds-spacing-lg);
+    justify-items: center;
+    padding-block: var(--nds-spacing-xl);
+
+    .is-ready & {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      align-content: center;
+    }
+  }
+
+  .stage-head {
+    display: grid;
+    gap: var(--nds-spacing-xs);
+    justify-items: center;
+    text-align: center;
+
+    h2 {
+      @include type.text-3xl;
+      color: var(--nds-text);
+    }
+  }
+
+  .board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--nds-spacing-md);
+    width: min(880px, 100%);
+    padding: var(--nds-spacing-lg);
+    border: 1px dashed var(--nds-border);
+    border-radius: var(--nds-radius-lg);
+    background: color-mix(in srgb, var(--nds-surface) 36%, transparent);
+
+    @media (max-width: 700px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .col {
+    display: grid;
+    gap: var(--nds-spacing-xs);
+    align-content: start;
+  }
+
+  .col-head {
+    @include type.text-label;
+    color: color-mix(in srgb, var(--nds-text) calc(55% + var(--done, 0) * 45%), transparent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding-bottom: var(--nds-spacing-2xs);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--nds-accent) calc(var(--done, 0) * 100%), var(--nds-border));
+    transition: color 0.2s linear, border-color 0.2s linear;
+  }
+
+  .chip {
+    @include type.text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nds-spacing-2xs);
+    width: fit-content;
+    padding: 4px 10px;
+    border: 1px solid var(--nds-border);
+    border-radius: var(--nds-radius-full);
+    background: var(--nds-surface-2);
+    color: var(--nds-text);
+    font-family: var(--nds-font-mono);
+    white-space: nowrap;
+
+    i {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+    &[data-cat='img'] i { background: var(--nds-success-high); }
+    &[data-cat='doc'] i { background: var(--nds-info-high, var(--nds-primary)); }
+    &[data-cat='audio'] i { background: var(--nds-warning-high); }
+    &[data-cat='code'] i { background: var(--nds-accent); }
+
+    &.is-sorted {
+      border-color: color-mix(in srgb, var(--nds-accent) 55%, var(--nds-border));
+    }
+  }
+
+  /* Enhanced mode: chips leave the flow and are driven by transforms. */
+  .sorter.is-ready .chip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform;
+  }
+
+  .hint {
+    @include type.text-sm;
+    color: var(--nds-disabled);
+
+    .static & {
+      display: none;
+    }
+  }
+</style>

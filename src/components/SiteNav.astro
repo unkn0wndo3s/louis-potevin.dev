@@ -1,57 +1,176 @@
 ---
-import { Navbar, Button } from '@unkn0wndo3s/nova-design-system';
-import { Send } from '@lucide/astro';
+import { Button } from '@unkn0wndo3s/nova-design-system';
+import {
+  getLocaleFromUrl,
+  useTranslations,
+  localizePath,
+  unlocalizePath,
+  LOCALES,
+} from '../i18n';
 
-const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const route = unlocalizePath(Astro.url.pathname);
+
+// About & Contact live on the home timeline - anchors seek the voyage there.
 const links = [
-  { href: '/', label: 'Home' },
-  { href: '/work', label: 'Projects' },
-  { href: '/about', label: 'About me' },
-  { href: '/contact', label: 'Contact' },
+  { href: localizePath('/', locale), label: t('nav.home'), match: '/' },
+  { href: localizePath('/work', locale), label: t('nav.work'), match: '/work' },
+  { href: localizePath('/docs', locale), label: t('nav.docs'), match: '/docs' },
+  { href: localizePath('/#about', locale), label: t('nav.about'), match: '/about' },
+  { href: localizePath('/#contact', locale), label: t('nav.contact'), match: '/contact' },
 ];
-const isActive = (href: string) =>
-  href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
+
+const isActive = (match: string) =>
+  match === '/' ? route === '/' : route === match || route.startsWith(`${match}/`);
 ---
 
-<div class="site-nav">
-  <Navbar brand="L · POTEVIN">
-    {
-      links.map((l) => (
-        <a
-          class={`navbar__link ${isActive(l.href) ? 'navbar__link--active' : ''}`}
-          href={l.href}
-          aria-current={isActive(l.href) ? 'page' : undefined}
-        >
-          {l.label}
-        </a>
-      ))
-    }
-    <Button slot="right" type="primary" size="sm" href="/contact">
-      <Send slot="icon-left" size={15} />
-      Get in touch
-    </Button>
-  </Navbar>
-</div>
+<header class="nav" data-nav>
+  <a class="nav__brand" href={localizePath('/', locale)} aria-label={t('nav.home')}>
+    L<span aria-hidden="true"> · </span>POTEVIN
+  </a>
+
+  <nav class="nav__links" aria-label="Main">
+    {links.map((l) => (
+      <a href={l.href} aria-current={isActive(l.match) ? 'page' : undefined}>{l.label}</a>
+    ))}
+  </nav>
+
+  <div class="nav__right">
+    <nav class="nav__lang" aria-label={t('a11y.langSwitch')}>
+      {LOCALES.map((l, i) => (
+        <>
+          {i > 0 && <span aria-hidden="true">/</span>}
+          <a
+            href={localizePath(route, l)}
+            hreflang={l}
+            aria-current={l === locale ? 'true' : undefined}
+          >
+            {l.toUpperCase()}
+          </a>
+        </>
+      ))}
+    </nav>
+    <span class="nav__cta">
+      <Button href={localizePath('/#contact', locale)} size="sm">{t('nav.cta')}</Button>
+    </span>
+    <button class="nav__burger" data-nav-toggle aria-expanded="false" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
 
 <style lang="scss">
-  .site-nav {
+  @use '../styles/type' as type;
+
+  .nav {
     position: sticky;
     top: 0;
-    z-index: 60;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-lg);
+    padding: var(--nds-spacing-sm) clamp(20px, 5vw, 56px);
+    background: color-mix(in srgb, var(--nds-background) 78%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: var(--nds-border-width-thin) solid var(--nds-border);
+  }
 
-    // Nova Navbar rendered translucent to let the starfield show through.
-    :global(.navbar) {
-      background: color-mix(in srgb, var(--nds-background) 72%, transparent);
-      backdrop-filter: blur(14px) saturate(1.1);
-      -webkit-backdrop-filter: blur(14px) saturate(1.1);
-      border-bottom: var(--nds-border-width-thin) solid
-        color-mix(in srgb, var(--nds-border) 80%, transparent);
+  .nav__brand {
+    @include type.text-xl;
+    color: var(--nds-text);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .nav__links {
+    display: flex;
+    gap: var(--nds-spacing-lg);
+    margin-inline: auto;
+
+    a {
+      @include type.text-label;
+      color: var(--nds-neutral);
+      text-decoration: none;
+      padding-block: var(--nds-spacing-2xs);
+      border-bottom: var(--nds-border-width-medium) solid transparent;
+      transition: color 0.15s ease;
+
+      &:hover { color: var(--nds-text); }
+      &[aria-current='page'] {
+        color: var(--nds-primary);
+        border-bottom-color: var(--nds-primary);
+      }
     }
   }
 
-  @media (max-width: 620px) {
-    .site-nav :global(.navbar__links) {
+  .nav__right {
+    display: flex;
+    align-items: center;
+    gap: var(--nds-spacing-md);
+    margin-left: auto;
+  }
+
+  .nav__lang {
+    @include type.text-label;
+    display: flex;
+    gap: var(--nds-spacing-2xs);
+    color: var(--nds-neutral);
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      &:hover { color: var(--nds-text); }
+      &[aria-current='true'] { color: var(--nds-primary); }
+    }
+  }
+
+  .nav__burger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    padding: var(--nds-spacing-xs);
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    span {
+      width: 22px;
+      height: 2px;
+      background: var(--nds-text);
+      border-radius: var(--nds-radius-full);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    &[aria-expanded='true'] {
+      span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+      span:nth-child(2) { opacity: 0; }
+      span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    }
+  }
+
+  @media (max-width: 840px) {
+    .nav { flex-wrap: wrap; }
+    .nav__burger { display: flex; }
+    .nav__cta { display: none; }
+
+    .nav__links {
       display: none;
+      flex-basis: 100%;
+      flex-direction: column;
+      gap: var(--nds-spacing-sm);
+      padding-block: var(--nds-spacing-md);
+
+      .nav[data-open] & { display: flex; }
     }
   }
 </style>
+
+<script>
+  const nav = document.querySelector('[data-nav]');
+  const toggle = document.querySelector('[data-nav-toggle]');
+  toggle?.addEventListener('click', () => {
+    const open = nav?.toggleAttribute('data-open');
+    toggle.setAttribute('aria-expanded', String(Boolean(open)));
+  });
+</script>

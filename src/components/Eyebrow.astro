@@ -1,39 +1,29 @@
 ---
 export interface Props {
-  index?: string; // ex. "01"
-  label: string;
+  index?: string;
 }
-const { index, label } = Astro.props;
+const { index } = Astro.props;
 ---
 
 <p class="eyebrow">
-  {index && <span class="eyebrow__idx">{index}</span>}
-  <span class="eyebrow__line" aria-hidden="true"></span>
-  <span class="eyebrow__label">{label}</span>
+  {index && <span class="eyebrow__index" aria-hidden="true">{index}</span>}
+  <span class="eyebrow__label"><slot /></span>
 </p>
 
 <style lang="scss">
-  @use 'styles/type' as *;
+  @use '../styles/type' as type;
 
   .eyebrow {
-    display: flex;
-    align-items: center;
-    gap: var(--nds-spacing-sm);
-    margin: 0 0 var(--nds-spacing-md);
+    @include type.text-label;
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--nds-spacing-xs);
+    color: var(--nds-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
   }
-  .eyebrow__idx {
+  .eyebrow__index {
     font-family: var(--nds-font-mono);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--nds-accent);
-  }
-  .eyebrow__line {
-    width: 28px;
-    height: 1px;
-    background: var(--nds-border-strong);
-  }
-  .eyebrow__label {
-    @include text-eyebrow;
     color: var(--nds-neutral);
   }
 </style>
