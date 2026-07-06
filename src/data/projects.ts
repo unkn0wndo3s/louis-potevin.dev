@@ -46,8 +46,8 @@ export const projects: Project[] = [
         en: 'Nova Design System started from a simple need: stop rewriting the same buttons, fields and modals from one project to the next. Every component ships with its TypeScript interface, its states (hover, focus, disabled) and isolated SCSS styles.',
       },
       {
-        fr: "La distribution se fait via npm (paquet public `@unkn0wndo3s/nova-design-system`), avec une CI Gitea Actions auto-hébergée qui vérifie, versionne et publie chaque release en 10 à 20 secondes. Le paquet livre ses sources `.astro`/`.scss` brutes, compilées côté consommateur.",
-        en: 'Distribution happens through npm (public package `@unkn0wndo3s/nova-design-system`), with a self-hosted Gitea Actions CI that checks, versions and publishes each release in 10 to 20 seconds. The package ships raw `.astro`/`.scss` sources, compiled on the consumer side.',
+        fr: "La distribution se fait via npm (paquet public `@unkn0wndo3s/nova-design-system`), avec une pipeline qui vérifie, versionne et publie chaque release en 10 à 20 secondes. Le paquet livre ses sources `.astro`/`.scss` brutes, compilées côté utilisateur.",
+        en: 'Distribution happens through npm (public package `@unkn0wndo3s/nova-design-system`), with a pipeline that checks, versions and publishes each release in 10 to 20 seconds. The package ships raw `.astro`/`.scss` sources, compiled on the consumer side.',
       },
       {
         fr: "La suite : adapter progressivement NDS à mes autres projets, y compris hors de l'écosystème Astro - un binding GPUI/Rust est prévu pour File Organizer.",
@@ -57,57 +57,19 @@ export const projects: Project[] = [
     highlights: [
       { fr: `${NDS_COMPONENT_COUNT} composants exportés sur npm`, en: `${NDS_COMPONENT_COUNT} components exported on npm` },
       { fr: 'Tokens couleur / typo / espacement / rayons, thème clair-sombre', en: 'Color / type / spacing / radius tokens, light-dark theme' },
-      { fr: 'CI/CD Gitea Actions auto-hébergée, publication npm en ~15 s', en: 'Self-hosted Gitea Actions CI/CD, npm publish in ~15 s' },
+      { fr: 'publication npm en ~15 s', en: 'npm publish in ~15 s' },
       { fr: 'Licence maison : usage libre, monétisation du DS interdite', en: 'Custom license: free to use, monetizing NDS itself prohibited' },
     ],
     stack: [
       { name: 'Astro', icon: 'Astro' },
       { name: 'TypeScript', icon: 'Typescript' },
       { name: 'Sass', icon: 'Sass' },
-      { name: 'Gitea CI', icon: 'Gitea' },
       { name: 'npm', icon: 'Npm' },
     ],
     links: [
       { label: 'npm', url: 'https://www.npmjs.com/package/@unkn0wndo3s/nova-design-system' },
-      { label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn/nova-design-system' },
+      { label: 'Github', url: 'https://github.com/unkn0wndo3s/Design-System' },
     ],
-  },
-  {
-    slug: 'nova-infra',
-    name: 'Self-hosted Infrastructure',
-    status: 'live',
-    featured: true,
-    tagline: {
-      fr: 'Services conteneurisés, CI/CD et ingress sécurisé sur serveur dédié.',
-      en: 'Containerized services, CI/CD and secured ingress on a dedicated server.',
-    },
-    summary: {
-      fr: "Infrastructure auto-hébergée sur serveur OVH : forge Git (Gitea), gestionnaire de secrets (Vaultwarden), runners CI et sites hébergés, exposés derrière un reverse proxy Apache et Cloudflare.",
-      en: 'Self-hosted infrastructure on an OVH server: Git forge (Gitea), secret manager (Vaultwarden), CI runners and hosted sites, exposed behind an Apache reverse proxy and Cloudflare.',
-    },
-    body: [
-      {
-        fr: "Tout mon outillage de développement tourne sur ma propre infrastructure : Gitea pour le code et les releases, Vaultwarden pour les secrets, un runner Gitea Actions pour la CI/CD, et les sites de production (dont celui-ci).",
-        en: 'All my development tooling runs on my own infrastructure: Gitea for code and releases, Vaultwarden for secrets, a Gitea Actions runner for CI/CD, and the production sites (including this one).',
-      },
-      {
-        fr: "Chaque service est conteneurisé et isolé ; l'exposition passe par un reverse proxy Apache avec TLS, derrière Cloudflare pour le DNS et la protection. Les déploiements sont entièrement automatisés : un push sur `main` suffit.",
-        en: 'Each service is containerized and isolated; exposure goes through an Apache reverse proxy with TLS, behind Cloudflare for DNS and protection. Deployments are fully automated: a push to `main` is all it takes.',
-      },
-    ],
-    highlights: [
-      { fr: 'Forge Git + CI/CD + secrets 100 % auto-hébergés', en: '100% self-hosted Git forge + CI/CD + secrets' },
-      { fr: 'Reverse proxy Apache, TLS, DNS et protection Cloudflare', en: 'Apache reverse proxy, TLS, Cloudflare DNS and protection' },
-      { fr: 'Déploiement continu : push sur main = mise en production', en: 'Continuous deployment: push to main = production release' },
-    ],
-    stack: [
-      { name: 'Docker', icon: 'Docker' },
-      { name: 'Linux', icon: 'Linux' },
-      { name: 'Apache', icon: 'Apache' },
-      { name: 'Gitea', icon: 'Gitea' },
-      { name: 'Cloudflare', icon: 'Cloudflare' },
-    ],
-    links: [{ label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn' }],
   },
   {
     slug: 'portfolio',
@@ -143,7 +105,7 @@ export const projects: Project[] = [
       { name: 'Sass', icon: 'Sass' },
       { name: 'Three.js', icon: 'Threedotjs' },
     ],
-    links: [{ label: 'Gitea', url: 'https://git.novaprojects.dev/unkn0wn/portfolio' }],
+    links: [{ label: 'Github', url: 'https://github.com/unkn0wndo3s/louis-potevin.dev' }],
   },
   {
     slug: 'file-organizer',
